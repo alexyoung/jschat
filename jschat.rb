@@ -94,6 +94,16 @@ module JsChat
     room.to_json
   end
 
+  # {"names":"#channel"}
+  def names(room_name, options = {})
+    room = Room.find(room_name)
+    if room
+      { 'names' => room.users.collect { |user| user.name } }.to_json
+    else
+      Error.new('No such room').to_json
+    end
+  end
+
   def unbind
     # TODO: Remove user from rooms and remove connection
     puts "Removing a connection"
@@ -114,7 +124,7 @@ module JsChat
     if input.has_key? 'identify'
       send_data identify(input['identify']) + "\n"
     else
-      ['change', 'send', 'join'].each do |command|
+      ['change', 'send', 'join', 'names'].each do |command|
         if @user.name.nil?
           return send_data(Error.new("Identify first").to_json + "\n")
         end
