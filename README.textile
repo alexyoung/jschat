@@ -1,11 +1,11 @@
 h2. JSON Chat
 
-run the server with ./jschat.rb
+run the server with ./server.rb
 
-connect a client with ./jschat.rb client
+connect a client with ./client.rb
 /nick name
 /join #room
 then speak
 
-run tests with ./jschat.rb test
+run tests with: ruby test/server_test.rb
 
