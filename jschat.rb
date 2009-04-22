@@ -239,7 +239,8 @@ if ARGV.first == 'test'
   end
 elsif ARGV.first == 'client'
   EM.run do
-    connection = EM.connect '0.0.0.0', port, JsClient
+    server = ARGV[1] || '0.0.0.0'
+    connection = EM.connect server, port, JsClient
     EM.open_keyboard(JsClient::KeyboardInput) do |keyboard|
       keyboard.connection = connection
     end
