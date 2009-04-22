@@ -7,7 +7,7 @@ require 'ncurses'
 
 ClientConfig = {
   :port => 6789,
-  :ip => '0.0.0.0'
+  :ip => ARGV[0] || '0.0.0.0'
 }
 
 module Ncurses
@@ -179,6 +179,7 @@ module JsClient
 end
 
 EM.run do
+  puts "Connecting to: #{ClientConfig[:ip]}"
   connection = EM.connect ClientConfig[:ip], ClientConfig[:port], JsClient
 
   EM.open_keyboard(JsClient::KeyboardInput) do |keyboard|
