@@ -43,6 +43,7 @@ module JsClient
       @windows[:info].addstr "[Time] \n"
       @windows[:input].bkgd Ncurses.COLOR_PAIR(1)
       @windows[:input].keypad(true)
+      @windows[:input].nodelay(true)
 
       @windows[:text].refresh
       @windows[:info].refresh
@@ -54,6 +55,8 @@ module JsClient
       @input_form = Ncurses::Form::FORM.new([@input_field])
       @input_form.set_form_win @windows[:input]
       @input_form.post_form
+      @input_field.set_field_buffer 0, ''
+
       @windows[:input].mvprintw(0, 0, "[channel] ")
       @windows[:input].refresh
     end
@@ -61,26 +64,23 @@ module JsClient
     def receive_data(data)
       @clipboard ||= ''
       c = data[0]
-      @windows[:input].addstr data
-      @windows[:input].refresh
+
       case c
         when -1
         # Return
-        when ?\n, ?\r, ?\C-m
+        when Ncurses::KEY_ENTER, ?\n, ?\r
           @input_form.form_driver Ncurses::Form::REQ_BEG_LINE
           line = @input_field.field_buffer(0)
           line.strip!
 
-          unless line.empty? and line.length > 1
-            manage_commands line[0..-2]
+          unless line.empty? and line.length > 0
+            manage_commands line
           end
           @input_form.form_driver Ncurses::Form::REQ_CLR_FIELD
-          @windows[:input].refresh
         # Backspace
         when Ncurses::KEY_BACKSPACE, ?\C-h
           @input_form.form_driver Ncurses::Form::REQ_DEL_PREV
           @input_form.form_driver Ncurses::Form::REQ_CLR_EOL
-          @windows[:input].refresh
         when ?\C-d
           @input_form.form_driver Ncurses::Form::REQ_DEL_CHAR
         when Ncurses::KEY_LEFT, ?\C-b
@@ -113,8 +113,10 @@ module JsClient
           @input_form.form_driver Ncurses::Form::REQ_PREV_CHAR
           @input_form.form_driver Ncurses::Form::REQ_DEL_WORD
         else
+          #@windows[:input].addstr data
           @input_form.form_driver c
       end
+      @windows[:input].refresh
     end
 
     def show_message(message)
