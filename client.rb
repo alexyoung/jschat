@@ -145,8 +145,9 @@ module JsClient
     end
 
     def strip_command(line)
-      if line.match %r{^/}
-        line.match(%r{/[a-zA-Z][^ ]*(.*)})[1].strip
+      matches = line.match(%r{/[a-zA-Z][^ ]*(.*)})
+      if matches
+        matches[1].strip
       else
         line
       end
