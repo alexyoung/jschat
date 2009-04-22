@@ -110,6 +110,7 @@ module JsChat
   def unbind
     # TODO: Remove user from rooms and remove connection
     puts "Removing a connection"
+    @@users.delete_if { |user| user == @user }
     @user = nil
   end
 
