@@ -222,6 +222,11 @@ module JsClient
     puts "Disconnected from server"
     exit
   end
+
+  def post_init
+    # When connected
+    send_identify ENV['LOGNAME']
+  end
 end
 
 EM.run do
