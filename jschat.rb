@@ -98,6 +98,7 @@ module JsChat
           user.connection.send_data({ 'quit' => quit_user.name, 'from' => @name }.to_json + "\n")
         end
       end
+      @users.delete_if { |user| user == quit_user }
     end
   end
 

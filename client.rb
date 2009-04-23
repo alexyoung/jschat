@@ -196,6 +196,8 @@ module JsClient
       end
     elsif json.has_key? 'quit'
       @keyboard.show_message "* User #{json['quit']} left #{json['from']}"
+    elsif json.has_key? 'error'
+      @keyboard.show_message "* [ERROR] #{json['error']}"
     else
       @keyboard.show_message "* [SERVER] #{data}"
     end
