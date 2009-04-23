@@ -48,6 +48,11 @@ class TestJsChat < Test::Unit::TestCase
     assert_equal expected, @jschat.receive_data({ 'identify' => 'alex' }.to_json)
   end
 
+  def test_invalid_identify
+    expected = { 'error' => 'Invalid name' }.to_json + "\n"
+    assert_equal expected, @jschat.receive_data({ 'identify' => '@lex' }.to_json)
+  end
+
   def test_join
     expected = { 'name' => '#oublinet' }.to_json + "\n"
     @jschat.receive_data({ 'identify' => 'bob' }.to_json)
@@ -74,6 +79,15 @@ class TestJsChat < Test::Unit::TestCase
 
     expected = { 'names' => ['nick', 'alex'] }.to_json + "\n"
     assert_equal expected, @jschat.receive_data({ 'names' => '#oublinet' }.to_json)
+  end
+
+  def test_valid_names
+    user = JsChat::User.new nil
+    ['alex*', "alex\n"].each do |name|
+      assert_raises JsChat::Errors::InvalidName do
+        user.name = name
+      end
+    end
   end
 end
 

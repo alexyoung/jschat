@@ -15,6 +15,18 @@ module JsChat
       { 'name' => @name }.to_json
     end
 
+    def name=(name)
+      if valid_name? name
+        @name = name
+      else
+        raise JsChat::Errors::InvalidName.new('Invalid name')
+      end
+    end
+
+    def valid_name?(name)
+      not name.match /[^[:alnum:]._\-\[\]^C]/
+    end
+
     def private_message(message, from)
     end
   end
@@ -54,17 +66,14 @@ module JsChat
     end
   end
 
-  class Error
-    def initialize(message)
-      @message = message
-    end
-
-    def to_s
-      @message
-    end
-
+  class Error < RuntimeError
     def to_json
-      { 'error' => @message }.to_json
+      { 'error' => message }.to_json
+    end
+  end
+
+  module Errors
+    class InvalidName < JsChat::Error
     end
   end
 
@@ -76,6 +85,8 @@ module JsChat
       @user.name = name
       @user.to_json
     end
+  rescue JsChat::Errors::InvalidName => exception
+    exception.to_json
   end
 
   def change(operator, options)
