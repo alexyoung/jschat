@@ -188,8 +188,14 @@ module JsClient
     if json.has_key? 'message'
       @keyboard.show_message "#{Time.now.strftime('%H:%M')} [#{json['room']}] <#{json['user']}> #{json['message']}"
     elsif json.has_key? 'joined'
-      @keyboard.show_message "* Joined: #{json['joined']['name']}"
-      @keyboard.show_message "* Members: #{json['joined']['members'].join(', ')}"
+      if json['joined'].kind_of? Hash
+        @keyboard.show_message "* Joined: #{json['joined']['name']}"
+        @keyboard.show_message "* Members: #{json['joined']['members'].join(', ')}"
+      else
+        @keyboard.show_message "* User #{json['user']} joined #{json['joined']}"
+      end
+    elsif json.has_key? 'quit'
+      @keyboard.show_message "* User #{json['quit']} left #{json['from']}"
     else
       @keyboard.show_message "* [SERVER] #{data}"
     end
@@ -211,7 +217,7 @@ module JsClient
   def unbind
     Ncurses.endwin
     Ncurses.clear
-    puts "Server disconnected or unavailable"
+    puts "Disconnected from server"
     exit
   end
 end

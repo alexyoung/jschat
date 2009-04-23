@@ -73,7 +73,15 @@ module JsChat
     def to_json
       { 'name' => @name, 'members' => member_names }.to_json
     end
-    
+
+    def join_notice(join_user)
+      @users.each do |user|
+        if user != join_user
+          user.connection.send_data({ 'user' => join_user.name, 'joined' => @name }.to_json + "\n")
+        end
+      end
+    end
+
     def quit_notice(quit_user)
       @users.each do |user|
         if user != quit_user
@@ -119,6 +127,7 @@ module JsChat
   def join(room_name, options = {})
     room = Room.find_or_create(room_name)
     room.users << @user
+    room.join_notice @user
     { 'joined' => room }.to_json
   end
 
