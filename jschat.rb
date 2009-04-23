@@ -61,8 +61,12 @@ module JsChat
       end
     end
     
+    def member_names
+      @users.collect { |user| user.name }
+    end
+
     def to_json
-      { 'name' => @name }.to_json
+      { 'name' => @name, 'members' => member_names }.to_json
     end
   end
 
@@ -102,7 +106,7 @@ module JsChat
   def join(room_name, options = {})
     room = Room.find_or_create(room_name)
     room.users << @user
-    room.to_json
+    { 'joined' => room }.to_json
   end
 
   # {"names":"#channel"}

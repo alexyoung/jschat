@@ -54,7 +54,7 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_join
-    expected = { 'name' => '#oublinet' }.to_json + "\n"
+    expected = { 'joined' => { 'name' => '#oublinet', 'members' => ['bob'] } }.to_json + "\n"
     @jschat.receive_data({ 'identify' => 'bob' }.to_json)
     assert_equal expected, @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
   end

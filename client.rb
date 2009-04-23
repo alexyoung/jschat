@@ -187,8 +187,11 @@ module JsClient
     json = JSON.parse(data)
     if json.has_key? 'message'
       @keyboard.show_message "#{Time.now.strftime('%H:%M')} [#{json['room']}] <#{json['user']}> #{json['message']}"
+    elsif json.has_key? 'joined'
+      @keyboard.show_message "* Joined: #{json['joined']['name']}"
+      @keyboard.show_message "* Members: #{json['joined']['members'].join(', ')}"
     else
-      @keyboard.show_message "[server] #{data.strip}"
+      @keyboard.show_message "* [SERVER] #{data}"
     end
   end
 
