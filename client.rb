@@ -21,7 +21,7 @@ module JsClient
 
   module KeyboardInput
     def setup_screen
-      window = Ncurses.initscr
+      Ncurses.initscr
       @windows = {}
       
       Ncurses.raw
@@ -30,15 +30,26 @@ module JsClient
       Ncurses.init_pair 1, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLACK
       Ncurses.init_pair 2, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLUE
 
-      cols, rows = [], []
-      Ncurses.stdscr.getmaxyx rows, cols
-      cols, rows = cols.first, rows.first
+      setup_windows
+    end
+
+    def setup_windows
       Ncurses.refresh
 
+      display_windows
+      
+      Signal.trap('SIGWINCH') do
+        resize
+      end
+    end
+
+    def display_windows
+      rows, cols = get_window_size
       @windows[:text] = Ncurses.newwin(rows - 2, cols, 0, 0)
       @windows[:info] = Ncurses.newwin(rows - 1, cols, rows - 2, 0)
       @windows[:input] = Ncurses.newwin(rows, cols, rows - 1, 0)
       @windows[:text].bkgd Ncurses.COLOR_PAIR(1)
+      @windows[:text].scrollok(true)
       @windows[:info].bkgd Ncurses.COLOR_PAIR(2)
       @windows[:info].addstr "[Time] \n"
       @windows[:input].bkgd Ncurses.COLOR_PAIR(1)
@@ -51,14 +62,29 @@ module JsClient
 
       @input_field = Ncurses::Form::FIELD.new(1, Ncurses.COLS - 10, 0, 10, 0, 0)
       @input_field.set_max_field(140)
-
       @input_form = Ncurses::Form::FORM.new([@input_field])
       @input_form.set_form_win @windows[:input]
       @input_form.post_form
       @input_field.set_field_buffer 0, ''
 
+      Ncurses.init_pair 1, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLACK
+      Ncurses.init_pair 2, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLUE
+
       @windows[:input].mvprintw(0, 0, "[channel] ")
       @windows[:input].refresh
+    end
+
+    def resize
+      Ncurses.refresh
+    end
+
+    # FIXME: This doesn't work after resize
+    # I've tried other ruby ncurses programs and they don't either
+    def get_window_size
+      Ncurses.refresh
+      cols, rows = [], []
+      Ncurses.stdscr.getmaxyx rows, cols
+      [rows.first, cols.first]
     end
 
     def receive_data(data)
@@ -113,7 +139,6 @@ module JsClient
           @input_form.form_driver Ncurses::Form::REQ_PREV_CHAR
           @input_form.form_driver Ncurses::Form::REQ_DEL_WORD
         else
-          #@windows[:input].addstr data
           @input_form.form_driver c
       end
       @windows[:input].refresh
