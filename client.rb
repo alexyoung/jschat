@@ -207,6 +207,13 @@ module JsClient
   def send_identify(username)
     send_data({ 'identify' => username }.to_json + "\n")
   end
+
+  def unbind
+    Ncurses.endwin
+    Ncurses.clear
+    puts "Server disconnected or unavailable"
+    exit
+  end
 end
 
 EM.run do

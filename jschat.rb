@@ -39,9 +39,14 @@ module JsChat
       @users = []
     end
 
-    def self.find(room_name)
+    def self.find(item)
       @@rooms ||= []
-      @@rooms.find { |room| room.name == room_name }
+
+      if item.kind_of? String
+        @@rooms.find { |room| room.name == item }
+      elsif item.kind_of? User
+        @@rooms.find_all { |room| room.users.include? item }
+      end
     end
 
     def self.find_or_create(room_name)
@@ -67,6 +72,14 @@ module JsChat
 
     def to_json
       { 'name' => @name, 'members' => member_names }.to_json
+    end
+    
+    def quit_notice(quit_user)
+      @users.each do |user|
+        if user != quit_user
+          user.connection.send_data({ 'quit' => quit_user.name, 'from' => @name }.to_json + "\n")
+        end
+      end
     end
   end
 
@@ -122,6 +135,10 @@ module JsChat
   def unbind
     # TODO: Remove user from rooms and remove connection
     puts "Removing a connection"
+    Room.find(@user).each do |room|
+      room.quit_notice @user
+    end
+
     @@users.delete_if { |user| user == @user }
     @user = nil
   end
