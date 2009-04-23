@@ -104,7 +104,7 @@ module JsClient
           end
           @input_form.form_driver Ncurses::Form::REQ_CLR_FIELD
         # Backspace
-        when Ncurses::KEY_BACKSPACE, ?\C-h
+        when Ncurses::KEY_BACKSPACE, ?\C-h, 127
           @input_form.form_driver Ncurses::Form::REQ_DEL_PREV
           @input_form.form_driver Ncurses::Form::REQ_CLR_EOL
         when ?\C-d
