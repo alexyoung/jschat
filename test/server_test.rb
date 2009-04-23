@@ -64,6 +64,14 @@ class TestJsChat < Test::Unit::TestCase
     assert_equal expected, @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
   end
 
+  def test_join_more_than_once
+    @jschat.receive_data({ 'identify' => 'bob' }.to_json)
+
+    expected = { 'error' => 'Already in that room' }.to_json + "\n"
+    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    assert_equal expected, @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+  end
+
   def test_identify_twice
     @jschat.receive_data({ 'identify' => 'nick' }.to_json)
     expected = { 'error' => 'Nick already taken' }.to_json + "\n"

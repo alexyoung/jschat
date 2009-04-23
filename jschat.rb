@@ -58,6 +58,16 @@ module JsChat
       room
     end
 
+    def join(user)
+      if users.find { |u| u == user }
+        Error.new('Already in that room').to_json
+      else
+        users << user
+        join_notice user
+        { 'joined' => self }.to_json
+      end
+    end
+
     def send_message(message)
       message['room'] = name
 
@@ -126,9 +136,7 @@ module JsChat
   # {"join":"#merk"}
   def join(room_name, options = {})
     room = Room.find_or_create(room_name)
-    room.users << @user
-    room.join_notice @user
-    { 'joined' => room }.to_json
+    room.join(@user)
   end
 
   # {"names":"#channel"}
