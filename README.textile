@@ -1,11 +1,24 @@
 h2. JSON Chat
 
-run the server with ./server.rb
+h3. Requirements
 
-connect a client with ./client.rb
-/nick name
-/join #room
-then speak
+* eventmachine
+* ncurses (for the client)
+* json
 
-run tests with: ruby test/server_test.rb
+h3. Usage
 
+* Run the server with <em>./server.rb</em>
+* Connect a client with <em>./client.rb</em>
+
+h3. Client commands
+
+* Change name or identify: <code>/nick name</code>
+* Join a room: <code>/join #room</code>
+* Join a room (alias): <code>/j #room</code>
+
+h3. Protocol design
+
+The protocol is designed to be as close to executable JSON as possible, so clients and servers are simple to implement.
+
+Look at <em>client.rb</em> <code>JsChat::Protocol</code> to see what I mean.

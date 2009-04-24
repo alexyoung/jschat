@@ -14,6 +14,38 @@ module Ncurses
   KEY_DELETE = ?\C-h
 end
 
+module JsChat
+  class Protocol
+    def legal_commands
+      %w(message joined quit error join names)
+    end
+
+    def legal?(command)
+      legal_commands.include? command
+    end
+
+    def message(json)
+      "#{Time.now.strftime('%H:%M')} [#{json['room']}] <#{json['user']}> #{json['message']}"
+    end
+
+    def join(json)
+      "* User #{json['user']} joined #{json['room']}"
+    end
+
+    def quit(json)
+      "* User #{json['user']} left #{json['room']}"
+    end
+    
+    def names(json)
+      "* In this channel: #{json.join(', ')}"
+    end
+
+    def error(json)
+      "* [ERROR] #{json['message']}"
+    end
+  end
+end
+
 module JsClient
   def keyboard=(keyboard)
     @keyboard = keyboard
@@ -162,7 +194,9 @@ module JsClient
           @connection.send_identify operand
         when %r{/quit}
           quit
-        when %r{/join}
+        when %r{/names}
+          @connection.send_names operand
+        when %r{/join}, %r{/j}
           @connection.send_join operand
         else
           @connection.send_message(line)
@@ -185,19 +219,10 @@ module JsClient
 
   def receive_data(data)
     json = JSON.parse(data)
-    if json.has_key? 'message'
-      @keyboard.show_message "#{Time.now.strftime('%H:%M')} [#{json['room']}] <#{json['user']}> #{json['message']}"
-    elsif json.has_key? 'joined'
-      if json['joined'].kind_of? Hash
-        @keyboard.show_message "* Joined: #{json['joined']['name']}"
-        @keyboard.show_message "* Members: #{json['joined']['members'].join(', ')}"
-      else
-        @keyboard.show_message "* User #{json['user']} joined #{json['joined']}"
-      end
-    elsif json.has_key? 'quit'
-      @keyboard.show_message "* User #{json['quit']} left #{json['from']}"
-    elsif json.has_key? 'error'
-      @keyboard.show_message "* [ERROR] #{json['error']}"
+
+    # Execute the json
+    if json.has_key?('display') and @protocol.legal? json['display']
+      @keyboard.show_message @protocol.send(json['display'], json[json['display']])
     else
       @keyboard.show_message "* [SERVER] #{data}"
     end
@@ -206,6 +231,11 @@ module JsClient
   def send_join(channel)
     @current_channel = channel
     send_data({ 'join' => channel }.to_json)
+  end
+
+  def send_names(channel = nil)
+    channel = @current_channel if channel.nil? or channel.strip.empty?
+    send_data({ 'names' => channel }.to_json)
   end
 
   def send_message(line)
@@ -225,6 +255,7 @@ module JsClient
 
   def post_init
     # When connected
+    @protocol = JsChat::Protocol.new
     send_identify ENV['LOGNAME']
   end
 end

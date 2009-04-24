@@ -64,15 +64,16 @@ module JsChat
       else
         users << user
         join_notice user
-        { 'joined' => self }.to_json
+        { 'display' => 'join', 'join' => { 'user' => user.name, 'room' => @name } }.to_json
       end
     end
 
     def send_message(message)
       message['room'] = name
+      response = { 'display' => 'message', 'message' => message }
 
       @users.each do |user|
-        user.connection.send_data message.to_json + "\n"
+        user.connection.send_data response.to_json + "\n"
       end
     end
     
@@ -87,7 +88,7 @@ module JsChat
     def join_notice(join_user)
       @users.each do |user|
         if user != join_user
-          user.connection.send_data({ 'user' => join_user.name, 'joined' => @name }.to_json + "\n")
+          user.connection.send_data({ 'display' => 'join', 'join' => { 'user' => join_user.name, 'room' => @name } }.to_json + "\n")
         end
       end
     end
@@ -95,7 +96,7 @@ module JsChat
     def quit_notice(quit_user)
       @users.each do |user|
         if user != quit_user
-          user.connection.send_data({ 'quit' => quit_user.name, 'from' => @name }.to_json + "\n")
+          user.connection.send_data({ 'display' => 'quit', 'quit' => { 'user' => quit_user.name, 'room' => @name } }.to_json + "\n")
         end
       end
       @users.delete_if { |user| user == quit_user }
@@ -103,8 +104,9 @@ module JsChat
   end
 
   class Error < RuntimeError
+    # Note: This shouldn't really include 'display' directives
     def to_json
-      { 'error' => message }.to_json
+      { 'display' => 'error', 'error' => { 'message' => message } }.to_json
     end
   end
 
@@ -128,23 +130,20 @@ module JsChat
   def change(operator, options)
   end
 
-  # {"to"=>"#merk", "send"=>"hello"}
   def send_message(message, options)
     room = Room.find options['to']
     room.send_message({ 'message' => message, 'user' => @user.name })
   end
 
-  # {"join":"#merk"}
   def join(room_name, options = {})
     room = Room.find_or_create(room_name)
     room.join(@user)
   end
 
-  # {"names":"#channel"}
   def names(room_name, options = {})
     room = Room.find(room_name)
     if room
-      { 'names' => room.users.collect { |user| user.name } }.to_json
+      { 'display' => 'names', 'names' => room.users.collect { |user| user.name } }.to_json
     else
       Error.new('No such room').to_json
     end
