@@ -8,6 +8,8 @@ puts "*** Must be run in production mode (-e production)"
 
 module JsChat
   class Server
+    attr_reader :connection
+
     def initialize(cookie)
       @cookie = cookie
       run
@@ -32,6 +34,11 @@ module JsChat
         @room = room
       end
 
+      def unbind
+        puts "*** Server disconnecting"
+        JsChat::Bridge.servers.delete_if { |hash, server| server.connection == self }
+      end
+
       def receive_data(data)
         json = JSON.parse(data)
 
@@ -42,14 +49,9 @@ module JsChat
           @name = json['name']
           send_data({'join' => @room}.to_json)
         elsif @identified and json['display'] == 'join'
-          puts "JOINED A CHANNEL"
+          puts "*** Channel joined"
         elsif @identified
           @messages << data
-          #if json.has_key?('display') and @protocol.legal? json['display']
-          #  @messages << @protocol.send(json['display'], json[json['display']])
-          #else
-          #  @messages << "* [SERVER] #{data}"
-          #end
         end
       end
     end
@@ -237,6 +239,7 @@ post '/identify' do
   redirect '/identify-pending'
 end
 
+# Invalid nick names should be handled
 get '/identify-pending' do
   load_bridge
 
