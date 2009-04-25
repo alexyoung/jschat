@@ -4,11 +4,12 @@ require 'json'
 
 module JsChat
   class User
-    attr_accessor :name, :connection
+    attr_accessor :name, :connection, :rooms
 
     def initialize(connection)
       @name = nil
       @connection = connection
+      @rooms = []
     end
 
     def to_json
@@ -59,12 +60,24 @@ module JsChat
     end
 
     def join(user)
-      if users.find { |u| u == user }
+      if @users.include? user
         Error.new('Already in that room').to_json
       else
-        users << user
+        @users << user
+        user.rooms << self
         join_notice user
         { 'display' => 'join', 'join' => { 'user' => user.name, 'room' => @name } }.to_json
+      end
+    end
+
+    def part(user)
+      if not @users.include?(user)
+        Error.new('Not in that room').to_json
+      else
+        user.rooms.delete_if { |r| r == self }
+        @users.delete_if { |u| u == user }
+        part_notice user
+        { 'display' => 'part', 'part' => { 'user' => user.name, 'room' => @name } }.to_json
       end
     end
 
@@ -85,21 +98,25 @@ module JsChat
       { 'name' => @name, 'members' => member_names }.to_json
     end
 
-    def join_notice(join_user)
-      @users.each do |user|
-        if user != join_user
-          user.connection.send_data({ 'display' => 'join', 'join' => { 'user' => join_user.name, 'room' => @name } }.to_json + "\n")
+    def notice(user, message)
+      @users.each do |u|
+        if u != user
+          u.connection.send_data(message + "\n")
         end
       end
     end
 
-    def quit_notice(quit_user)
-      @users.each do |user|
-        if user != quit_user
-          user.connection.send_data({ 'display' => 'quit', 'quit' => { 'user' => quit_user.name, 'room' => @name } }.to_json + "\n")
-        end
-      end
-      @users.delete_if { |user| user == quit_user }
+    def join_notice(user)
+      notice(user, { 'display' => 'join', 'join' => { 'user' => user.name, 'room' => @name } }.to_json)
+    end
+
+    def part_notice(user)
+      notice(user, { 'display' => 'part', 'part' => { 'user' => user.name, 'room' => @name } }.to_json)
+    end
+
+    def quit_notice(user)
+      notice(user, { 'display' => 'quit', 'quit' => { 'user' => user.name, 'room' => @name } }.to_json)
+      @users.delete_if { |u| u == user }
     end
   end
 
@@ -132,12 +149,26 @@ module JsChat
 
   def send_message(message, options)
     room = Room.find options['to']
-    room.send_message({ 'message' => message, 'user' => @user.name })
+
+    if room and room.users.include? @user
+      room.send_message({ 'message' => message, 'user' => @user.name })
+    else
+      Error.new("Please join this room first").to_json
+    end
   end
 
   def join(room_name, options = {})
     room = Room.find_or_create(room_name)
-    room.join(@user)
+    room.join @user
+  end
+
+  def part(room_name, options = {})
+    room = @user.rooms.find { |r| r.name == room_name }
+    if room
+      room.part @user
+    else
+      Error.new("You are not in that room").to_json
+    end
   end
 
   def names(room_name, options = {})
@@ -173,7 +204,7 @@ module JsChat
     if input.has_key? 'identify'
       send_data identify(input['identify']) + "\n"
     else
-      ['change', 'send', 'join', 'names'].each do |command|
+      ['change', 'send', 'join', 'names', 'part'].each do |command|
         if @user.name.nil?
           return send_data(Error.new("Identify first").to_json + "\n")
         end

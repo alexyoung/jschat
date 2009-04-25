@@ -17,7 +17,7 @@ end
 module JsChat
   class Protocol
     def legal_commands
-      %w(message joined quit error join names)
+      %w(message joined quit error join names part)
     end
 
     def legal?(command)
@@ -30,6 +30,10 @@ module JsChat
 
     def join(json)
       "* User #{json['user']} joined #{json['room']}"
+    end
+
+    def part(json)
+      "* You left #{json['room']}"
     end
 
     def quit(json)
@@ -190,14 +194,16 @@ module JsClient
     def manage_commands(line)
       operand = strip_command line
       case line
-        when %r{/nick}
+        when %r{^/nick}
           @connection.send_identify operand
-        when %r{/quit}
+        when %r{^/quit}
           quit
-        when %r{/names}
+        when %r{^/names}
           @connection.send_names operand
-        when %r{/join}, %r{/j}
+        when %r{^/join}, %r{^/j}
           @connection.send_join operand
+        when %r{^/part}, %r{^/p}
+          @connection.send_part operand
         else
           @connection.send_message(line)
       end
@@ -226,11 +232,18 @@ module JsClient
     else
       @keyboard.show_message "* [SERVER] #{data}"
     end
+  rescue Exception
+    puts $!
   end
 
   def send_join(channel)
     @current_channel = channel
     send_data({ 'join' => channel }.to_json)
+  end
+
+  def send_part(channel = nil)
+    channel = @current_channel if channel.nil?
+    send_data({ 'part' => channel }.to_json)
   end
 
   def send_names(channel = nil)

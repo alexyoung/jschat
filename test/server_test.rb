@@ -28,6 +28,7 @@ class JsChatMock
     room = Room.find_or_create room_name
     user = User.new self
     user.name = name
+    user.rooms << room
     @@users << user
     room.users << user
   end
@@ -96,6 +97,31 @@ class TestJsChat < Test::Unit::TestCase
         user.name = name
       end
     end
+  end
+
+  def test_message_not_in_room
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    @jschat.add_user 'alex', '#oublinet'
+
+    expected = '{"display":"error","error":{"message":"Please join this room first"}}'
+
+    assert_equal expected, @jschat.receive_data({ 'send' => 'hello', 'to' => '#merk' }.to_json)
+  end
+
+  def test_message
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    @jschat.add_user 'alex', '#oublinet'
+    assert @jschat.receive_data({ 'send' => 'hello', 'to' => '#oublinet' }.to_json)
+  end
+
+  def test_part
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    @jschat.add_user 'alex', '#oublinet'
+    expected = '{"display":"part","part":{"room":"#oublinet","user":"nick"}}' + "\n"
+    assert_equal expected, @jschat.receive_data({ 'part' => '#oublinet'}.to_json)
   end
 end
 
