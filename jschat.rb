@@ -28,7 +28,9 @@ module JsChat
       not name.match /[^[:alnum:]._\-\[\]^C]/
     end
 
-    def private_message(message, from)
+    def private_message(message)
+      response = { 'display' => 'message', 'message' => message }
+      @connection.send_data response.to_json + "\n"
     end
   end
 
@@ -144,16 +146,33 @@ module JsChat
     exception.to_json
   end
 
-  def change(operator, options)
-  end
-
-  def send_message(message, options)
+  def room_message(message, options)
     room = Room.find options['to']
 
     if room and room.users.include? @user
       room.send_message({ 'message' => message, 'user' => @user.name })
     else
       Error.new("Please join this room first").to_json
+    end
+  end
+
+  def private_message(message, options)
+    user = @@users.find { |u| u.name == options['to'] }
+
+    if user
+      # Return the message to the user, and send it to the other person too
+      user.private_message({ 'message' => message, 'user' => @user.name })
+      @user.private_message({ 'message' => message, 'user' => @user.name })
+    else
+      Error.new('User not online').to_json
+    end
+  end
+
+  def send_message(message, options)
+    if options['to'].chars.first == '#'
+      room_message message, options
+    else
+      private_message message, options
     end
   end
 

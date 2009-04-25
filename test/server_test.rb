@@ -123,5 +123,12 @@ class TestJsChat < Test::Unit::TestCase
     expected = '{"display":"part","part":{"room":"#oublinet","user":"nick"}}' + "\n"
     assert_equal expected, @jschat.receive_data({ 'part' => '#oublinet'}.to_json)
   end
+
+  def test_private_message
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.add_user 'alex', '#oublinet'
+    expected = '{"display":"message","message":{"user":"nick","message":"hello"}}' + "\n"
+    assert_equal expected, @jschat.receive_data({ 'send' => 'hello', 'to' => 'alex' }.to_json)
+  end
 end
 

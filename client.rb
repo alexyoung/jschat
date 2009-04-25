@@ -25,7 +25,11 @@ module JsChat
     end
 
     def message(json)
-      "#{Time.now.strftime('%H:%M')} [#{json['room']}] <#{json['user']}> #{json['message']}"
+      if json['room']
+        "#{Time.now.strftime('%H:%M')} [#{json['room']}] <#{json['user']}> #{json['message']}"
+      else
+        "#{Time.now.strftime('%H:%M')} PRIVATE <#{json['user']}> #{json['message']}"
+      end
     end
 
     def join(json)
@@ -204,6 +208,9 @@ module JsClient
           @connection.send_join operand
         when %r{^/part}, %r{^/p}
           @connection.send_part operand
+        when %r{^/message}, %r{^/m}
+          message = operand.match(/([^ ]*)\s+(.*)/)
+          @connection.send_private_message message[1], message[2]
         else
           @connection.send_message(line)
       end
@@ -253,6 +260,10 @@ module JsClient
 
   def send_message(line)
     send_data({ 'to' => @current_channel, 'send' => line }.to_json + "\n")
+  end
+
+  def send_private_message(user, message)
+    send_data({ 'to' => user, 'send' => message }.to_json + "\n")
   end
 
   def send_identify(username)
