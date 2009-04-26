@@ -45,13 +45,19 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_identify
-    expected = { 'name' => 'alex' }.to_json + "\n"
+    expected = { 'display' => 'identified', 'identified' => { 'name' => 'alex' } }.to_json + "\n"
     assert_equal expected, @jschat.receive_data({ 'identify' => 'alex' }.to_json)
   end
 
   def test_invalid_identify
     expected = { 'display' => 'error',  'error' => { 'message' => 'Invalid name' } }.to_json + "\n"
     assert_equal expected, @jschat.receive_data({ 'identify' => '@lex' }.to_json)
+  end
+
+  def test_invalid_room_name
+    @jschat.receive_data({ 'identify' => 'bob' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'join' => 'oublinet' }.to_json)
+    assert_equal 'Invalid room name', response['error']['message']
   end
 
   def test_join
@@ -103,10 +109,8 @@ class TestJsChat < Test::Unit::TestCase
     @jschat.receive_data({ 'identify' => 'nick' }.to_json)
     @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
     @jschat.add_user 'alex', '#oublinet'
-
-    expected = '{"display":"error","error":{"message":"Please join this room first"}}'
-
-    assert_equal expected, @jschat.receive_data({ 'send' => 'hello', 'to' => '#merk' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'send' => 'hello', 'to' => '#merk' }.to_json)
+    assert_equal 'Please join this room first', response['error']['message']
   end
 
   def test_message
@@ -120,15 +124,15 @@ class TestJsChat < Test::Unit::TestCase
     @jschat.receive_data({ 'identify' => 'nick' }.to_json)
     @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
     @jschat.add_user 'alex', '#oublinet'
-    expected = '{"display":"part","part":{"room":"#oublinet","user":"nick"}}' + "\n"
-    assert_equal expected, @jschat.receive_data({ 'part' => '#oublinet'}.to_json)
+    response = JSON.parse @jschat.receive_data({ 'part' => '#oublinet'}.to_json)
+    assert_equal '#oublinet', response['part']['room']
   end
 
   def test_private_message
     @jschat.receive_data({ 'identify' => 'nick' }.to_json)
     @jschat.add_user 'alex', '#oublinet'
-    expected = '{"display":"message","message":{"user":"nick","message":"hello"}}' + "\n"
-    assert_equal expected, @jschat.receive_data({ 'send' => 'hello', 'to' => 'alex' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'send' => 'hello', 'to' => 'alex' }.to_json)
+    assert_equal 'hello', response['message']['message']
   end
 end
 

@@ -17,14 +17,14 @@ module JsChat
     end
 
     def name=(name)
-      if valid_name? name
+      if User.valid_name? name
         @name = name
       else
         raise JsChat::Errors::InvalidName.new('Invalid name')
       end
     end
 
-    def valid_name?(name)
+    def self.valid_name?(name)
       not name.match /[^[:alnum:]._\-\[\]^C]/
     end
 
@@ -40,6 +40,10 @@ module JsChat
     def initialize(name)
       @name = name
       @users = []
+    end
+
+    def self.valid_name?(name)
+      User.valid_name?(name[1..-1]) and name[0].chr == '#'
     end
 
     def self.find(item)
@@ -109,15 +113,15 @@ module JsChat
     end
 
     def join_notice(user)
-      notice(user, { 'display' => 'join', 'join' => { 'user' => user.name, 'room' => @name } }.to_json)
+      notice(user, { 'display' => 'join_notice', 'join_notice' => { 'user' => user.name, 'room' => @name } }.to_json)
     end
 
     def part_notice(user)
-      notice(user, { 'display' => 'part', 'part' => { 'user' => user.name, 'room' => @name } }.to_json)
+      notice(user, { 'display' => 'part_notice', 'part_notice' => { 'user' => user.name, 'room' => @name } }.to_json)
     end
 
     def quit_notice(user)
-      notice(user, { 'display' => 'quit', 'quit' => { 'user' => user.name, 'room' => @name } }.to_json)
+      notice(user, { 'display' => 'quit_notice', 'quit_notice' => { 'user' => user.name, 'room' => @name } }.to_json)
       @users.delete_if { |u| u == user }
     end
   end
@@ -140,7 +144,7 @@ module JsChat
       Error.new("Nick already taken").to_json
     else
       @user.name = name
-      @user.to_json
+      { 'display' => 'identified', 'identified' => @user }.to_json
     end
   rescue JsChat::Errors::InvalidName => exception
     exception.to_json
@@ -169,7 +173,7 @@ module JsChat
   end
 
   def send_message(message, options)
-    if options['to'].chars.first == '#'
+    if options['to'][0].chr == '#'
       room_message message, options
     else
       private_message message, options
@@ -177,8 +181,12 @@ module JsChat
   end
 
   def join(room_name, options = {})
-    room = Room.find_or_create(room_name)
-    room.join @user
+    if Room.valid_name? room_name
+      room = Room.find_or_create(room_name)
+      room.join @user
+    else
+      Error.new('Invalid room name').to_json
+    end
   end
 
   def part(room_name, options = {})

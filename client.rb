@@ -17,7 +17,7 @@ end
 module JsChat
   class Protocol
     def legal_commands
-      %w(message joined quit error join names part)
+      %w(message joined quit error join names part identified part_notice quit_notice join_notice)
     end
 
     def legal?(command)
@@ -40,6 +40,10 @@ module JsChat
       "* You left #{json['room']}"
     end
 
+    def part_notice(json)
+      "* #{json['user']} left #{json['room']}"
+    end
+
     def quit(json)
       "* User #{json['user']} left #{json['room']}"
     end
@@ -48,9 +52,16 @@ module JsChat
       "* In this channel: #{json.join(', ')}"
     end
 
+    def identified(json)
+      " * You are now known as #{json['name']}"
+    end
+
     def error(json)
       "* [ERROR] #{json['message']}"
     end
+
+    alias_method :quit_notice, :quit
+    alias_method :join_notice, :join
   end
 end
 
