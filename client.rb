@@ -83,6 +83,7 @@ module JsClient
 
       @history_position = 0
       @history = []
+      @lastlog = []
 
       setup_windows
     end
@@ -133,6 +134,11 @@ module JsClient
       Ncurses.reset_prog_mode
 
       display_windows
+
+      @lastlog.each do |message|
+        display_text message
+      end
+
       Ncurses.refresh
     rescue Exception => exception
       puts exception
@@ -237,6 +243,12 @@ module JsClient
     end
 
     def show_message(message)
+      @lastlog << message.dup
+      @lastlog = @lastlog.reverse.slice(0, 25) if @lastlog.size > 25
+      display_text message
+    end
+
+    def display_text(message)
       @windows[:text].addstr "#{message}\n"
       @windows[:text].refresh
       @windows[:input].refresh
