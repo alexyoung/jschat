@@ -81,6 +81,9 @@ module JsClient
       Ncurses.use_default_colors
       Ncurses.init_pair 2, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLUE
 
+      @history_position = 0
+      @history = []
+
       setup_windows
     end
 
@@ -147,6 +150,33 @@ module JsClient
     def receive_data(data)
       @clipboard ||= ''
       c = data[0]
+      
+      if @sequence
+        @sequence << c
+
+        if data == 'A'
+          @sequence = nil
+          @history_position -= 1 if @history_position > 0
+        elsif data == 'B'
+          @sequence = nil
+          @history_position += 1 if @history_position < @history.size
+        end
+
+        begin
+          @input_form.form_driver Ncurses::Form::REQ_CLR_FIELD
+          text = @history[@history_position]
+          @input_field.set_field_buffer(0, text)
+          @windows[:input].addstr text
+          @windows[:input].refresh
+          @input_form.form_driver Ncurses::Form::REQ_END_LINE
+        rescue Exception => exception
+        end
+
+        return
+      elsif c == 27
+        @sequence = c
+        return
+      end
 
       case c
         when -1
@@ -157,6 +187,8 @@ module JsClient
           line.strip!
 
           unless line.empty? and line.length > 0
+            @history << line.dup
+            @history_position = @history.size
             manage_commands line
           end
           @input_form.form_driver Ncurses::Form::REQ_CLR_FIELD
