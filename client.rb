@@ -53,7 +53,7 @@ module JsChat
     end
 
     def identified(json)
-      " * You are now known as #{json['name']}"
+      "* You are now known as #{json['name']}"
     end
 
     def error(json)
@@ -301,8 +301,12 @@ module JsClient
         when %r{^/part}, %r{^/p}
           @connection.send_part operand
         when %r{^/message}, %r{^/m}
-          message = operand.match(/([^ ]*)\s+(.*)/)
-          @connection.send_private_message message[1], message[2]
+          if operand and operand.size > 0
+            message = operand.match(/([^ ]*)\s+(.*)/)
+            if message
+              @connection.send_private_message message[1], message[2]
+            end
+          end
         else
           @connection.send_message(line)
       end
@@ -331,8 +335,8 @@ module JsClient
     else
       @keyboard.show_message "* [SERVER] #{data}"
     end
-  rescue Exception
-    puts $!
+  rescue Exception => exception
+    @keyboard.show_message "* [CLIENT ERROR] #{exception}"
   end
 
   def send_join(channel)
