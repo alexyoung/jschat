@@ -78,7 +78,7 @@ module JsClient
       Ncurses.raw
       Ncurses.start_color
       Ncurses.noecho
-      Ncurses.init_pair 1, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLACK
+      Ncurses.use_default_colors
       Ncurses.init_pair 2, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLUE
 
       setup_windows
@@ -99,11 +99,9 @@ module JsClient
       @windows[:text] = Ncurses.newwin(rows - 2, cols, 0, 0)
       @windows[:info] = Ncurses.newwin(rows - 1, cols, rows - 2, 0)
       @windows[:input] = Ncurses.newwin(rows, cols, rows - 1, 0)
-      @windows[:text].bkgd Ncurses.COLOR_PAIR(1)
       @windows[:text].scrollok(true)
       @windows[:info].bkgd Ncurses.COLOR_PAIR(2)
       @windows[:info].addstr "[Time] \n"
-      @windows[:input].bkgd Ncurses.COLOR_PAIR(1)
       @windows[:input].keypad(true)
       @windows[:input].nodelay(true)
 
@@ -118,15 +116,23 @@ module JsClient
       @input_form.post_form
       @input_field.set_field_buffer 0, ''
 
-      Ncurses.init_pair 1, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLACK
-      Ncurses.init_pair 2, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLUE
-
       @windows[:input].mvprintw(0, 0, "[channel] ")
       @windows[:input].refresh
     end
 
     def resize
+      @windows.each do |window_name, window|
+        window.clear
+      end
+
+      Ncurses.def_prog_mode
+      Ncurses.endwin
+      Ncurses.reset_prog_mode
+
+      display_windows
       Ncurses.refresh
+    rescue Exception => exception
+      puts exception
     end
 
     # FIXME: This doesn't work after resize
@@ -144,7 +150,7 @@ module JsClient
 
       case c
         when -1
-        # Return
+          # Return
         when Ncurses::KEY_ENTER, ?\n, ?\r
           @input_form.form_driver Ncurses::Form::REQ_BEG_LINE
           line = @input_field.field_buffer(0)
@@ -154,8 +160,11 @@ module JsClient
             manage_commands line
           end
           @input_form.form_driver Ncurses::Form::REQ_CLR_FIELD
-        # Backspace
+        when ?\C-l
+          # Refresh
+          resize
         when Ncurses::KEY_BACKSPACE, ?\C-h, 127
+          # Backspa
           @input_form.form_driver Ncurses::Form::REQ_DEL_PREV
           @input_form.form_driver Ncurses::Form::REQ_CLR_EOL
         when ?\C-d
