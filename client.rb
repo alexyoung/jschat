@@ -84,15 +84,27 @@ module JsClient
       @history_position = 0
       @history = []
       @lastlog = []
+      @channel_name = ''
 
       setup_windows
+    end
+
+    def channel_name=(channel_name)
+      @channel_name = channel_name
     end
 
     def setup_windows
       Ncurses.refresh
 
       display_windows
-      
+
+      Thread.new do
+        loop do
+          display_time
+          sleep 60 - Time.now.sec
+        end
+      end
+
       Signal.trap('SIGWINCH') do
         resize
       end
@@ -105,22 +117,37 @@ module JsClient
       @windows[:input] = Ncurses.newwin(rows, cols, rows - 1, 0)
       @windows[:text].scrollok(true)
       @windows[:info].bkgd Ncurses.COLOR_PAIR(2)
-      @windows[:info].addstr "[Time] \n"
       @windows[:input].keypad(true)
       @windows[:input].nodelay(true)
 
       @windows[:text].refresh
       @windows[:info].refresh
       @windows[:input].refresh
+      display_input
+    end
 
-      @input_field = Ncurses::Form::FIELD.new(1, Ncurses.COLS - 10, 0, 10, 0, 0)
+    def display_input
+      offset = @channel_name.size > 0 ? @channel_name.size + 3 : 0
+      @input_field = Ncurses::Form::FIELD.new(1, Ncurses.COLS - offset, 0, offset, 0, 0)
       @input_field.set_max_field(140)
       @input_form = Ncurses::Form::FORM.new([@input_field])
       @input_form.set_form_win @windows[:input]
       @input_form.post_form
       @input_field.set_field_buffer 0, ''
+    end
 
-      @windows[:input].mvprintw(0, 0, "[channel] ")
+    def display_channel_name
+      if @channel_name
+        display_input
+        @windows[:input].mvprintw(0, 0, "[#{@channel_name}] ")
+        @windows[:input].refresh
+      end
+    end
+
+    def display_time
+      @windows[:info].move 0, 0
+      @windows[:info].addstr "[#{Time.now.strftime('%H:%M')}]"
+      @windows[:info].refresh
       @windows[:input].refresh
     end
 
@@ -134,6 +161,7 @@ module JsClient
       Ncurses.reset_prog_mode
 
       display_windows
+      display_time
 
       @lastlog.each do |message|
         display_text message
@@ -309,6 +337,8 @@ module JsClient
 
   def send_join(channel)
     @current_channel = channel
+    @keyboard.channel_name = channel
+    @keyboard.display_channel_name
     send_data({ 'join' => channel }.to_json)
   end
 
