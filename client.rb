@@ -162,6 +162,7 @@ module JsClient
 
       display_windows
       display_time
+      display_channel_name
 
       @lastlog.each do |message|
         display_text message
