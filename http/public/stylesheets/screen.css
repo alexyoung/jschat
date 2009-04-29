@@ -3,7 +3,7 @@ html, body { background: #f0f0f0; }
 
 h1, h2, h3, h4 { margin: 0; padding: 0; }
 
-.page { text-align: left; width: 90%; margin: 35px auto 0 auto; 0.5em; }
+.page { text-align: left; width: 90%; margin: 70px auto 0 auto; 0.5em; }
 .header { position: absolute; top: 0; height: 45px; width: 100%; z-index: 10; background-color: #ffc }
 
 #messages { position: absolute; width: 80%; top: 30px; bottom: 35px; background-color: #fff; z-index: 5; }

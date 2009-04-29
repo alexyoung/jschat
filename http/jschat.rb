@@ -73,7 +73,9 @@ module JsChat
     end
 
     def run
-      @connection = EM.connect '0.0.0.0', 6789, EventServer
+      EM.run do
+        @connection = EM.connect '0.0.0.0', 6789, EventServer
+      end
     end
 
     def recent_messages
