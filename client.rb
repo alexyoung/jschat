@@ -129,7 +129,8 @@ module JsClient
     def display_input
       offset = @channel_name.size > 0 ? @channel_name.size + 3 : 0
       @input_field = Ncurses::Form::FIELD.new(1, Ncurses.COLS - offset, 0, offset, 0, 0)
-      @input_field.set_max_field(140)
+      Ncurses::Form.field_opts_off(@input_field, Ncurses::Form::O_AUTOSKIP)
+      Ncurses::Form.field_opts_off(@input_field, Ncurses::Form::O_STATIC)
       @input_form = Ncurses::Form::FORM.new([@input_field])
       @input_form.set_form_win @windows[:input]
       @input_form.post_form
@@ -221,7 +222,7 @@ module JsClient
           line = @input_field.field_buffer(0)
           line.strip!
 
-          unless line.empty? and line.length > 0
+          if !line.empty? and line.length > 0
             @history << line.dup
             @history_position = @history.size
             manage_commands line
