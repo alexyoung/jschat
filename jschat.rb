@@ -30,7 +30,7 @@ module JsChat
 
     def private_message(message)
       response = { 'display' => 'message', 'message' => message }
-      @connection.send_data response.to_json + "\n"
+      @connection.send_response response
     end
   end
 
@@ -67,23 +67,23 @@ module JsChat
 
     def join(user)
       if @users.include? user
-        Error.new('Already in that room').to_json
+        Error.new('Already in that room')
       else
         @users << user
         user.rooms << self
         join_notice user
-        { 'display' => 'join', 'join' => { 'user' => user.name, 'room' => @name } }.to_json
+        { 'display' => 'join', 'join' => { 'user' => user.name, 'room' => @name } }
       end
     end
 
     def part(user)
       if not @users.include?(user)
-        Error.new('Not in that room').to_json
+        Error.new('Not in that room')
       else
         user.rooms.delete_if { |r| r == self }
         @users.delete_if { |u| u == user }
         part_notice user
-        { 'display' => 'part', 'part' => { 'user' => user.name, 'room' => @name } }.to_json
+        { 'display' => 'part', 'part' => { 'user' => user.name, 'room' => @name } }
       end
     end
 
@@ -92,7 +92,7 @@ module JsChat
       response = { 'display' => 'message', 'message' => message }
 
       @users.each do |user|
-        user.connection.send_data response.to_json + "\n"
+        user.connection.send_response response
       end
     end
     
@@ -107,21 +107,21 @@ module JsChat
     def notice(user, message)
       @users.each do |u|
         if u != user
-          u.connection.send_data(message + "\n")
+          u.connection.send_response(message)
         end
       end
     end
 
     def join_notice(user)
-      notice(user, { 'display' => 'join_notice', 'join_notice' => { 'user' => user.name, 'room' => @name } }.to_json)
+      notice(user, { 'display' => 'join_notice', 'join_notice' => { 'user' => user.name, 'room' => @name } })
     end
 
     def part_notice(user)
-      notice(user, { 'display' => 'part_notice', 'part_notice' => { 'user' => user.name, 'room' => @name } }.to_json)
+      notice(user, { 'display' => 'part_notice', 'part_notice' => { 'user' => user.name, 'room' => @name } })
     end
 
     def quit_notice(user)
-      notice(user, { 'display' => 'quit_notice', 'quit_notice' => { 'user' => user.name, 'room' => @name } }.to_json)
+      notice(user, { 'display' => 'quit_notice', 'quit_notice' => { 'user' => user.name, 'room' => @name } })
       @users.delete_if { |u| u == user }
     end
   end
@@ -141,13 +141,13 @@ module JsChat
   # {"identify":"alex"}
   def identify(name, options = {})
     if @@users.find { |user| user.name == name }
-      Error.new("Nick already taken").to_json
+      Error.new("Nick already taken")
     else
       @user.name = name
-      { 'display' => 'identified', 'identified' => @user }.to_json
+      { 'display' => 'identified', 'identified' => @user }
     end
   rescue JsChat::Errors::InvalidName => exception
-    exception.to_json
+    exception
   end
 
   def room_message(message, options)
@@ -156,7 +156,7 @@ module JsChat
     if room and room.users.include? @user
       room.send_message({ 'message' => message, 'user' => @user.name })
     else
-      Error.new("Please join this room first").to_json
+      send_response Error.new("Please join this room first")
     end
   end
 
@@ -168,12 +168,14 @@ module JsChat
       user.private_message({ 'message' => message, 'user' => @user.name })
       @user.private_message({ 'message' => message, 'user' => @user.name })
     else
-      Error.new('User not online').to_json
+      Error.new('User not online')
     end
   end
 
   def send_message(message, options)
-    if options['to'][0].chr == '#'
+    if options['to'].nil?
+      send_response Error.new('Please specify who to send the message to or join a channel')
+    elsif options['to'][0].chr == '#'
       room_message message, options
     else
       private_message message, options
@@ -185,7 +187,7 @@ module JsChat
       room = Room.find_or_create(room_name)
       room.join @user
     else
-      Error.new('Invalid room name').to_json
+      Error.new('Invalid room name')
     end
   end
 
@@ -194,16 +196,16 @@ module JsChat
     if room
       room.part @user
     else
-      Error.new("You are not in that room").to_json
+      Error.new("You are not in that room")
     end
   end
 
   def names(room_name, options = {})
     room = Room.find(room_name)
     if room
-      { 'display' => 'names', 'names' => room.users.collect { |user| user.name } }.to_json
+      { 'display' => 'names', 'names' => room.users.collect { |user| user.name } }
     else
-      Error.new('No such room').to_json
+      Error.new('No such room')
     end
   end
 
@@ -224,23 +226,49 @@ module JsChat
     @@users << @user
   end
 
+  def log(level, message)
+    if Object.const_defined? :ServerConfig
+      if @user
+        message = "#{@user.name}: #{message}"
+      end
+      ServerConfig[:logger].send level, message
+    end
+  end
+
+  def send_response(data)
+    response = ''
+    case data
+      when String
+        response = data
+      when Error
+        response = data.to_json + "\n"
+        log :error, data.message
+      else
+        # Other objects should be safe for to_json
+        response = data.to_json + "\n"
+        log :info, response.strip
+    end
+    
+    send_data response
+  end
+
   def receive_data(data)
     # Receive the identify request
     input = JSON.parse data
 
     if input.has_key? 'identify'
-      send_data identify(input['identify']) + "\n"
+      send_response identify(input['identify'])
     else
       ['change', 'send', 'join', 'names', 'part'].each do |command|
         if @user.name.nil?
-          return send_data(Error.new("Identify first").to_json + "\n")
+          return send_response(Error.new("Identify first"))
         end
 
         if input.has_key? command
           if command == 'send'
             return send('send_message', input[command], input)
           else
-            return send_data(send(command, input[command], input) + "\n")
+            return send_response(send(command, input[command], input))
           end
         end
       end
