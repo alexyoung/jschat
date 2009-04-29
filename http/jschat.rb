@@ -4,6 +4,9 @@ require 'sha1'
 require 'eventmachine'
 require 'json'
 
+set :public, Proc.new { File.join(root, 'public') }
+set :views, Proc.new { File.join(root, 'views') }
+
 puts "*** Must be run in production mode (-e production)"
 
 module JsChat
@@ -44,9 +47,10 @@ module JsChat
 
         puts "LINE FROM SERVER: #{data}"
 
-        if @identified == false and json['name']
+        if @identified == false and json['identified']
           @identified = true
           @name = json['name']
+          puts "*** IDENTIFIED, JOINING ROOM"
           send_data({'join' => @room}.to_json)
         elsif @identified and json['display'] == 'join'
           puts "*** Channel joined"
@@ -123,10 +127,9 @@ end
 helpers do
   def message_form
     html = <<-HTML
-      <h2>Server count: #{JsChat::Bridge.servers.length}</h2>
       <ul id="messages">
       </ul>
-      <div>
+      <div id="input">
         <form method="post" action="/message" id="post_message">
           Enter message: <input name="message" id="message" value="" type="text" />
         </form>
@@ -139,7 +142,7 @@ helpers do
 
     if cookie.nil?
       cookie = JsChat::Bridge.new_cookie
-      set_cookie 'jschat-id', cookie
+      response.set_cookie 'jschat-id', cookie
       JsChat::Bridge.new_server cookie
     end
 
@@ -149,74 +152,6 @@ helpers do
   def messages_js
     '[' + @bridge.recent_messages.join(", ") + ']';
   end
-end
-
-# Main layout
-template :layout do
-  <<-HTML
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-	<title>JsChat</title>
-  <script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.0.3/prototype.js" type="text/javascript"></script>
-  <script type="text/javascript">
-    var Display = {
-      message: function(message) {
-        var text = '[\#{room}] (\#{user}) \#{message}';
-        return text.interpolate({ room: message['room'], user: message['user'], message: message['message'] });
-      }
-    };
-
-    function displayMessages(text) {
-      var json_set = text.evalJSON(true);
-      if (json_set.length == 0) {
-        return;
-      }
-      json_set.each(function(json) {
-        var display_text = Display[json['display']](json[json['display']]);
-        $('messages').insert({ bottom: '<li>' + display_text + '</li>' });
-      });
-    }
-
-    function updateMessages() {
-      new Ajax.Request('/messages', {
-        method: 'get',
-        onSuccess: function(transport) {
-          displayMessages(transport.responseText);
-        }
-      });
-    }
-
-    document.observe('dom:loaded', function() {
-      if ($('post_message')) {
-        $('post_message').observe('submit', function(e) {
-          var element = Event.element(e);
-          var message = $('message').value;
-          $('message').value = '';
-          new Ajax.Request('/message', {
-            method: 'post',
-            parameters: { 'message': message },
-            onSuccess: function(transport) {
-            }
-          });
-
-          Event.stop(e);
-        });
-      }
-
-      if ($('messages')) {
-        new PeriodicalExecuter(updateMessages, 3);
-      }
-    });
-  </script>
-</head>
-<body>
-  <%= yield %>
-</body>
-</html>
-  HTML
 end
 
 # Identify
@@ -265,3 +200,4 @@ post '/message' do
   @bridge.server.send_message params['message']
   "Message posted"
 end
+
