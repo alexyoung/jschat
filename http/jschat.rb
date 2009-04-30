@@ -127,6 +127,9 @@ module JsChat
 end
 
 helpers do
+  include Rack::Utils
+  alias_method :h, :escape_html
+
   def message_form
     html = <<-HTML
       <ul id="messages">
