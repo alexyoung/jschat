@@ -202,7 +202,7 @@ end
 
 post '/message' do
   load_bridge
-  @bridge.server.send_message params['message']
+  @bridge.server.send_message h params['message']
   "Message posted"
 end
 
