@@ -19,6 +19,9 @@ module JsChat
     end
 
     module EventServer
+      include Rack::Utils
+      alias_method :h, :escape_html
+
       def post_init
         puts "post_init"
         @identified = false
@@ -38,8 +41,9 @@ module JsChat
       end
 
       def unbind
-        puts "*** Server disconnecting"
+        puts "*** Server disconnecting.  Count now: #{JsChat::Bridge.servers.size}"
         JsChat::Bridge.servers.delete_if { |hash, server| server.connection == self }
+        puts "*** Server disconnected.  Count now: #{JsChat::Bridge.servers.size}"
       end
 
       def receive_data(data)
@@ -55,9 +59,33 @@ module JsChat
         elsif @identified and json['display'] == 'join'
           puts "*** Channel joined"
         elsif @identified
-          @messages << data
+          @messages << sanitize_json(json).to_json
         end
       end
+
+      def sanitize_json(json)
+        # Sanitize output
+        json.each do |field, value|
+          if value.kind_of? String
+            json[field] = h value
+          elsif value.kind_of? Hash
+            json[field] = sanitize_json(value)
+          elsif value.kind_of? Array
+            json[field] = value.collect do |v|
+              if v.kind_of? String
+                h v
+              else
+                sanitize_json(v)
+              end
+            end
+          end
+        end
+        json
+      end
+    end
+
+    def quit
+      @connection.close_connection
     end
 
     def room=(room)
@@ -121,6 +149,27 @@ module JsChat
       else
         Bridge.new_server(@cookie)
         @server = @@servers[@cookie]
+      end
+    end
+
+    def polled
+      return if @quit
+
+      @polling = true
+      @last_poll ||= Time.now
+
+      if @poll_thread.nil?
+        @poll_thread = Thread.new do
+          while @polling
+            if Time.now - @last_poll > 120
+              @server.quit
+              @polling = false
+              @quit
+            end
+
+            sleep 120
+          end
+        end
       end
     end
   end
@@ -192,6 +241,7 @@ end
 
 get '/messages' do
   load_bridge
+  @bridge.polled
   messages_js
 end
 
@@ -202,7 +252,12 @@ end
 
 post '/message' do
   load_bridge
-  @bridge.server.send_message h params['message']
+  @bridge.server.send_message params['message']
   "Message posted"
 end
 
+post '/quit' do
+  load_bridge
+  @bridge.server.quit
+  "Quit"
+end

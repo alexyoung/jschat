@@ -41,6 +41,10 @@ document.observe('dom:loaded', function() {
 
       Event.stop(e);
     });
+
+    Event.observe(window, 'unload', function() {
+      new Ajax.Request('/quit');
+    });
   }
 
   if ($('messages')) {
