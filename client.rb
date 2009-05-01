@@ -16,6 +16,10 @@ end
 
 module JsChat
   class Protocol
+    def initialize(connection)
+      @connection = connection
+    end
+
     def legal_commands
       %w(message joined quit error join names part identified part_notice quit_notice join_notice)
     end
@@ -33,6 +37,7 @@ module JsChat
     end
 
     def join(json)
+      @connection.send_names json['room']
       "* User #{json['user']} joined #{json['room']}"
     end
 
@@ -274,7 +279,7 @@ module JsClient
 
     def show_message(message)
       @lastlog << message.dup
-      @lastlog = @lastlog.reverse.slice(0, 25) if @lastlog.size > 25
+      @lastlog = @lastlog.reverse.slice(0, 25).reverse if @lastlog.size > 25
       display_text message
     end
 
@@ -379,7 +384,7 @@ module JsClient
 
   def post_init
     # When connected
-    @protocol = JsChat::Protocol.new
+    @protocol = JsChat::Protocol.new self
     send_identify ENV['LOGNAME']
   end
 end
