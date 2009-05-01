@@ -156,7 +156,7 @@ module JsChat
       return if @quit
 
       @polling = true
-      @last_poll ||= Time.now
+      @last_poll = Time.now
 
       if @poll_thread.nil?
         @poll_thread = Thread.new do
