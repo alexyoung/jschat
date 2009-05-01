@@ -46,14 +46,17 @@ module JsChat
     end
 
     def part_notice(json)
+      @connection.names.delete json['user']
       "* #{json['user']} left #{json['room']}"
     end
 
     def quit(json)
-      "* User #{json['user']} left #{json['room']}"
+      @connection.names.delete json['user']
+      "* User #{json['user']} left #{json['room']} #{@connection.names.join(', ')}"
     end
     
     def names(json)
+      @connection.names = json
       "* In this channel: #{json.join(', ')}"
     end
 
@@ -73,6 +76,15 @@ end
 module JsClient
   def keyboard=(keyboard)
     @keyboard = keyboard
+  end
+
+  # This should take channel into account
+  def names=(names)
+    @names = names
+  end
+
+  def names
+    @names
   end
 
   module KeyboardInput
