@@ -93,6 +93,8 @@ module JsChat
     end
 
     def watch_timeout
+      @polling = true
+
       Thread.new do
         while @polling do
           if Time.now - @last_poll > 120
@@ -100,6 +102,7 @@ module JsChat
             quit
             puts "TIMEOUT"
           end
+          sleep 120
         end
       end
     end
