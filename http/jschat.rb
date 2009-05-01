@@ -88,6 +88,22 @@ module JsChat
       @connection.close_connection
     end
 
+    def polled
+      @last_poll = Time.now
+    end
+
+    def watch_timeout
+      Thread.new do
+        while @polling do
+          if Time.now - @last_poll > 120
+            @polling = false
+            quit
+            puts "TIMEOUT"
+          end
+        end
+      end
+    end
+
     def room=(room)
       @connection.room = room
     end
@@ -101,6 +117,8 @@ module JsChat
     end
 
     def run
+      watch_timeout
+
       EM.run do
         @connection = EM.connect '0.0.0.0', 6789, EventServer
       end
@@ -149,27 +167,6 @@ module JsChat
       else
         Bridge.new_server(@cookie)
         @server = @@servers[@cookie]
-      end
-    end
-
-    def polled
-      return if @quit
-
-      @polling = true
-      @last_poll = Time.now
-
-      if @poll_thread.nil?
-        @poll_thread = Thread.new do
-          while @polling
-            if Time.now - @last_poll > 120
-              @server.quit
-              @polling = false
-              @quit
-            end
-
-            sleep 120
-          end
-        end
       end
     end
   end
@@ -241,7 +238,7 @@ end
 
 get '/messages' do
   load_bridge
-  @bridge.polled
+  @bridge.server.polled
   messages_js
 end
 
