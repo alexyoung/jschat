@@ -14,8 +14,11 @@ h1 { text-align: left; margin-left: 20px }
 #messages .user { width: 6em; text-align: right; font-weight: bold; display: block; float: left }
 #messages .message { display: block; float: left; padding: 0 0 0 10px }
 
-#input { position: absolute; bottom: 10px; margin: 0; auto; padding: 0.5em; width: 90%; z-index: 7 }
-#input input { width: 50% }
+#input { position: absolute; bottom: 10px; left: 20px; right: 250px; margin: 0; padding: 0; z-index: 7; }
+#message_container { left: 0; right: 75px; position: absolute; bottom: 10px }
+#message { width: 100% }
+#message:focus { background-color: #ffc }
+#send_button { position: absolute; right: 0; bottom: 10px } 
 
 #info { position: absolute; top: 45px; width: 200px; right: 20px; margin: 0; auto; padding: 0.5em; z-index: 1 }
 

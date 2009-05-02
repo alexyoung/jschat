@@ -25,6 +25,8 @@ module JsChat
       def post_init
         @identified = false
         @messages = []
+        @disconnected = false
+        @identification_error = nil
 
         watch_timeout
       end
@@ -48,6 +50,10 @@ module JsChat
         end
       end
 
+      def identification_error
+        @identification_error
+      end
+
       def identified?
         @identified
       end
@@ -61,10 +67,12 @@ module JsChat
       end
 
       def room ; @room ; end
+      def disconnected? ; @disconnected ; end
 
       def unbind
         puts "*** Server disconnecting.  Count now: #{JsChat::Bridge.servers.size}"
         JsChat::Bridge.servers.delete_if { |hash, server| server.connection == self }
+        @disconnected = true
         puts "*** Server disconnected.  Count now: #{JsChat::Bridge.servers.size}"
       end
 
@@ -78,6 +86,8 @@ module JsChat
           @name = json['name']
           puts "*** IDENTIFIED, JOINING ROOM"
           send_data({'join' => @room}.to_json)
+        elsif @identified == false and json['display'] == 'error'
+          @identification_error = json['error']
         elsif @identified and json['display'] == 'join'
           @messages << sanitize_json(json).to_json
           # Get the names list
@@ -187,13 +197,14 @@ helpers do
       <ul id="messages">
       </ul>
       <div id="info">
-        <h2 id="room-name">Room Name</h2>
+        <h2 id="room-name">Loading...</h2>
         <ul id="names"> 
         </ul>
       </div>
       <div id="input">
         <form method="post" action="/message" id="post_message">
-          Enter message: <input name="message" id="message" value="" type="text" />
+          <div id="message_container"><input name="message" id="message" value="" type="text" /></div>
+          <input name="submit" type="submit" id="send_button" value="Send" />
         </form>
       </div>
     HTML
@@ -236,14 +247,16 @@ post '/identify' do
   redirect '/identify-pending'
 end
 
-# Invalid nick names should be handled
+# Invalid nick names should be handled using Ajax
 get '/identify-pending' do
   load_bridge
 
   if @bridge.server.identified?
     redirect '/chat'
+  elsif @bridge.server.connection.identification_error
+    @bridge.server.connection.identification_error.to_json
   else
-    "Not identified yet, please refresh"
+    { 'action' => 'reload' }.to_json
   end
 end
 
@@ -255,7 +268,12 @@ end
 
 get '/chat' do
   load_bridge
-  erb message_form
+
+  if @bridge.server.identified?
+    erb message_form
+  else
+    redirect '/'
+  end
 end
 
 post '/message' do
