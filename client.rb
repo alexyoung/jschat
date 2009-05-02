@@ -41,6 +41,11 @@ module JsChat
       "* User #{json['user']} joined #{json['room']}"
     end
 
+    def join_notice(json)
+      @connection.names << json['user']
+      "* User #{json['user']} joined #{json['room']}"
+    end
+
     def part(json)
       "* You left #{json['room']}"
     end
@@ -52,7 +57,7 @@ module JsChat
 
     def quit(json)
       @connection.names.delete json['user']
-      "* User #{json['user']} left #{json['room']} #{@connection.names.join(', ')}"
+      "* User #{json['user']} left #{json['room']}"
     end
     
     def names(json)
@@ -69,7 +74,6 @@ module JsChat
     end
 
     alias_method :quit_notice, :quit
-    alias_method :join_notice, :join
   end
 end
 
