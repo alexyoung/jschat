@@ -69,6 +69,10 @@ function adaptSizes() {
 }
 
 document.observe('dom:loaded', function() {
+  if ($('room') && window.location.hash) {
+    $('room').value = window.location.hash;
+  }
+
   if ($('post_message')) {
     adaptSizes();
     
