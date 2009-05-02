@@ -1,7 +1,42 @@
 var Display = {
+  add_message: function(text) {
+    $('messages').insert({ bottom: '<li>' + text + '</li>' });
+    $('messages').scrollTop = $('messages').scrollHeight;   
+  },
+
   message: function(message) {
     var text = '<span class="user">\#{user}</span> <span class="message">\#{message}</span>';
-    return text.interpolate({ room: message['room'], user: message['user'], message: message['message'] });
+    text = text.interpolate({ room: message['room'], user: message['user'], message: message['message'] });
+    this.add_message(text);
+  },
+
+  names: function(names) {
+    names.each(function(name) {
+      $('names').insert({ bottom: '<li>' + name + '</li>' });
+    });
+  },
+
+  join: function(join) {
+    $('room-name').innerHTML = join['room'];
+  },
+
+  join_notice: function(join) {
+    $('names').insert({ bottom: '<li>' + join['user'] + '</li>' });
+    this.add_message(join['user'] + ' has joined the room');
+  },
+
+  remove_user: function(name) {
+    $$('#names li').each(function(element) { if (element.innerHTML == name) element.remove(); });
+  },
+
+  part_notice: function(part) {
+    this.remove_user(part['user']);
+    this.add_message(part['user'] + ' has left the room');
+  },
+
+  quit_notice: function(quit) {
+    this.remove_user(part['user']);
+    this.add_message(part['user'] + ' has quit');
   }
 };
 
@@ -11,9 +46,7 @@ function displayMessages(text) {
     return;
   }
   json_set.each(function(json) {
-    var display_text = Display[json['display']](json[json['display']]);
-    $('messages').insert({ bottom: '<li>' + display_text + '</li>' });
-    $('messages').scrollTop = $('messages').scrollHeight;
+    Display[json['display']](json[json['display']]);
   });
 }
 
@@ -28,6 +61,7 @@ function updateMessages() {
 
 document.observe('dom:loaded', function() {
   if ($('post_message')) {
+    $('message').activate();
     $('post_message').observe('submit', function(e) {
       var element = Event.element(e);
       var message = $('message').value;

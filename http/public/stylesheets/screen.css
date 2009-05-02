@@ -3,14 +3,23 @@ html, body { background: #f0f0f0; }
 
 h1, h2, h3, h4 { margin: 0; padding: 0; }
 
+h1 { text-align: left; margin-left: 20px }
+
 .page { text-align: left; width: 90%; margin: 70px auto 0 auto; 0.5em; }
 .header { position: absolute; top: 0; height: 45px; width: 100%; z-index: 10; background-color: #ffc }
 
-#messages { position: absolute; width: 80%; top: 30px; bottom: 35px; background-color: #fff; z-index: 5; }
+#messages { position: absolute; top: 30px; left: 20px; bottom: 35px; right: 250px; background-color: #fff; z-index: 5; }
 #messages { list-style-type: none; overflow: auto }
 #messages li { padding: 0.25em 0; border-bottom: 1px solid #f0f0f0; float: left; width: 100% }
 #messages .user { width: 6em; text-align: right; font-weight: bold; display: block; float: left }
 #messages .message { display: block; float: left; padding: 0 0 0 10px }
 
-#input { position: absolute; bottom: 10px; margin: 0; auto; padding: 0.5em; width: 90% }
+#input { position: absolute; bottom: 10px; margin: 0; auto; padding: 0.5em; width: 90%; z-index: 7 }
 #input input { width: 50% }
+
+#info { position: absolute; top: 45px; width: 200px; right: 20px; margin: 0; auto; padding: 0.5em; z-index: 1 }
+
+ul#names { margin: 0; padding: 0; list-style-type: none } 
+ul#names li { margin: 0; padding: 0.25em 0; } 
+
+.footer { position: absolute; right: 10px; bottom: 18px; z-index: 6 }

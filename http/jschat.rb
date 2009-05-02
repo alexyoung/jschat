@@ -77,7 +77,9 @@ module JsChat
           puts "*** IDENTIFIED, JOINING ROOM"
           send_data({'join' => @room}.to_json)
         elsif @identified and json['display'] == 'join'
-          puts "*** Channel joined"
+          @messages << sanitize_json(json).to_json
+          # Get the names list
+          send_data({'names' => @room}.to_json)
         elsif @identified
           @messages << sanitize_json(json).to_json
         end
@@ -182,6 +184,11 @@ helpers do
     html = <<-HTML
       <ul id="messages">
       </ul>
+      <div id="info">
+        <h2 id="room-name">Room Name</h2>
+        <ul id="names"> 
+        </ul>
+      </div>
       <div id="input">
         <form method="post" action="/message" id="post_message">
           Enter message: <input name="message" id="message" value="" type="text" />
