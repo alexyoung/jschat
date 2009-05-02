@@ -23,9 +23,29 @@ module JsChat
       alias_method :h, :escape_html
 
       def post_init
-        puts "post_init"
         @identified = false
         @messages = []
+
+        watch_timeout
+      end
+
+      def polled
+        @last_poll = Time.now
+      end
+
+      def watch_timeout
+        @last_poll = Time.now
+
+        Thread.new do
+          loop do
+            if Time.now - @last_poll > 10
+              puts "TIMEOUT"
+              close_connection
+              return
+            end
+            sleep 10
+          end
+        end
       end
 
       def identified?
@@ -88,25 +108,6 @@ module JsChat
       @connection.close_connection
     end
 
-    def polled
-      @last_poll = Time.now
-    end
-
-    def watch_timeout
-      @polling = true
-
-      Thread.new do
-        while @polling do
-          if Time.now - @last_poll > 120
-            @polling = false
-            quit
-            puts "TIMEOUT"
-          end
-          sleep 120
-        end
-      end
-    end
-
     def room=(room)
       @connection.room = room
     end
@@ -120,8 +121,6 @@ module JsChat
     end
 
     def run
-      watch_timeout
-
       EM.run do
         @connection = EM.connect '0.0.0.0', 6789, EventServer
       end
@@ -241,7 +240,7 @@ end
 
 get '/messages' do
   load_bridge
-  @bridge.server.polled
+  @bridge.server.connection.polled
   messages_js
 end
 
