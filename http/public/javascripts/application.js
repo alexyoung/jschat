@@ -35,8 +35,8 @@ var Display = {
   },
 
   quit_notice: function(quit) {
-    this.remove_user(part['user']);
-    this.add_message(part['user'] + ' has quit');
+    this.remove_user(quit['user']);
+    this.add_message(quit['user'] + ' has quit');
   }
 };
 
