@@ -11,6 +11,7 @@ var Display = {
   },
 
   names: function(names) {
+    $('names').innerHTML = '';
     names.each(function(name) {
       $('names').insert({ bottom: '<li>' + name + '</li>' });
     });
@@ -53,14 +54,28 @@ function displayMessages(text) {
 function updateMessages() {
   new Ajax.Request('/messages', {
     method: 'get',
+    parameters: { time: new Date().getTime() },
     onSuccess: function(transport) {
       displayMessages(transport.responseText);
     }
   });
 }
 
+function adaptSizes() {
+  var windowSize = document.viewport.getDimensions();
+  $('messages').setStyle({ width: windowSize.width - 220 + 'px' });
+  $('messages').setStyle({ height: windowSize.height - 90 + 'px' });
+  $('message').setStyle({ width: windowSize.width - 290 + 'px' });
+}
+
 document.observe('dom:loaded', function() {
   if ($('post_message')) {
+    adaptSizes();
+    
+    Event.observe(window, 'resize', function() {
+      adaptSizes();
+    });
+
     $('message').activate();
     $('post_message').observe('submit', function(e) {
       var element = Event.element(e);
