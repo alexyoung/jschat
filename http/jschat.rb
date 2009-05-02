@@ -38,12 +38,12 @@ module JsChat
 
         Thread.new do
           loop do
-            if Time.now - @last_poll > 10
+            if Time.now - @last_poll > 120
               puts "TIMEOUT"
               close_connection
               return
             end
-            sleep 10
+            sleep 120
           end
         end
       end
