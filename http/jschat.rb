@@ -60,6 +60,8 @@ module JsChat
         @room = room
       end
 
+      def room ; @room ; end
+
       def unbind
         puts "*** Server disconnecting.  Count now: #{JsChat::Bridge.servers.size}"
         JsChat::Bridge.servers.delete_if { |hash, server| server.connection == self }
@@ -135,7 +137,7 @@ module JsChat
     end
     
     def send_message(message)
-      @connection.send_data({ 'to' => '#merk', 'send' => message }.to_json + "\n")
+      @connection.send_data({ 'to' => @connection.room, 'send' => message }.to_json + "\n")
     end
   end
 
@@ -219,7 +221,7 @@ get '/' do
   html = <<-HTML
     <form method="post" action="/identify">
       Enter name: <input name="name" id="name" value="" type="text" />
-      and room: <input name="room" id="room" value="#merk" type="room" />
+      and room: <input name="room" id="room" value="#jschat" type="room" />
       <input type="submit" value="Go" />
     </form> 
   HTML
