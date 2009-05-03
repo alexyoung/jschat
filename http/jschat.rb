@@ -203,7 +203,7 @@ helpers do
       </div>
       <div id="input">
         <form method="post" action="/message" id="post_message">
-          <input name="message" id="message" value="" type="text" />
+          <input name="message" id="message" value="" type="text" autocomplete="off" />
           <input name="submit" type="submit" id="send_button" value="Send" />
         </form>
       </div>

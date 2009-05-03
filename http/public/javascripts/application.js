@@ -5,16 +5,45 @@ var Display = {
   },
 
   message: function(message) {
-    var text = '<span class="user">\#{user}</span> <span class="message">\#{message}</span>';
-    text = text.interpolate({ room: message['room'], user: message['user'], message: message['message'] });
+    var text = '<span class="time">\#{time}</span> <span class="user">\#{user}</span> <span class="message">\#{message}</span>';
+    var d = new Date;
+    var date_text = d.getHours() + ':' + d.getMinutes();
+    text = text.interpolate({ time: date_text, room: message['room'], user: this.truncateName(message['user']), message: this.decorateMessage(message['message']) });
     this.add_message(text);
+  },
+
+  truncateName: function(text) {
+    return text.truncate(12);
+  },
+
+  extractURLs: function(text) {
+    return text.match(/(http:\/\/[^\s]*)/g);
+  },
+
+  decorateMessage: function(text) {
+    try {
+      var links = this.extractURLs(text);
+
+      if (links) {
+        links.each(function(url) {
+          if (url.match(/(jp?g|png|gif)/i)) {
+            text = text.replace(url, '<a href="\#{url}" target="_blank"><img class="inline-image" src="\#{image}" /></a>'.interpolate({ url: url, image: url }));
+          } else {
+            text = text.replace(url, '<a href="\#{url}">\#{link_name}</a>'.interpolate({ url: url, link_name: url}));
+          }
+        });
+      }
+    } catch (exception) {
+      console.log(exception);
+    }
+    return text;
   },
 
   names: function(names) {
     $('names').innerHTML = '';
     names.each(function(name) {
-      $('names').insert({ bottom: '<li>' + name + '</li>' });
-    });
+      $('names').insert({ bottom: '<li>' + this.truncateName(name) + '</li>' });
+    }.bind(this));
   },
 
   join: function(join) {
@@ -22,7 +51,7 @@ var Display = {
   },
 
   join_notice: function(join) {
-    $('names').insert({ bottom: '<li>' + join['user'] + '</li>' });
+    $('names').insert({ bottom: '<li>' + this.truncateName(join['user']) + '</li>' });
     this.add_message(join['user'] + ' has joined the room');
   },
 
