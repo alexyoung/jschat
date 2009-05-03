@@ -5,13 +5,20 @@ var Display = {
   },
 
   message: function(message) {
+    var date_text = this.dateText();
     var text = '<span class="time">\#{time}</span> <span class="user">\#{user}</span> <span class="message">\#{message}</span>';
-    var d = new Date;
-    var minutes = d.getMinutes().toString();
-    minutes = minutes.length == 1 ? '0' + minutes : minutes;
-    var date_text = d.getHours() + ':' + minutes; 
     text = text.interpolate({ time: date_text, room: message['room'], user: this.truncateName(message['user']), message: this.decorateMessage(message['message']) });
     this.add_message(text);
+  },
+
+  dateText: function() {
+    var d = new Date;
+    var minutes = d.getMinutes().toString();
+    var hours = d.getHours();
+    minutes = minutes.length == 1 ? '0' + minutes : minutes;
+    hours = hours.length == 1 ? '0' + hours : hours;
+    var date_text = hours + ':' + minutes; 
+    return date_text;
   },
 
   truncateName: function(text) {
