@@ -11,14 +11,18 @@ var Display = {
     this.add_message(text);
   },
 
+  zeroPad: function(value, length) {
+    value = value.toString();
+    if (value.length >= length) {
+      return value;
+    } else {
+      return this.zeroPad('0' + value, length);
+    }
+  },
+
   dateText: function() {
     var d = new Date;
-    var minutes = d.getMinutes().toString();
-    var hours = d.getHours();
-    minutes = minutes.length == 1 ? '0' + minutes : minutes;
-    hours = hours.length == 1 ? '0' + hours : hours;
-    var date_text = hours + ':' + minutes; 
-    return date_text;
+    return this.zeroPad(d.getHours(), 2) + ':' + this.zeroPad(d.getMinutes(), 2); 
   },
 
   truncateName: function(text) {
