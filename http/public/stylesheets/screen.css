@@ -12,9 +12,10 @@ h1 { text-align: left; margin-left: 20px }
 #messages { width: 500px; height: 300px; margin: 0 20px 10px 20px; padding: 0; overflow: auto; background-color: #fff; float: left; text-align: left; display: inline; }
 #messages { list-style-type: none; overflow: auto }
 #messages li { padding: 0.25em 0; border-bottom: 1px solid #f0f0f0; float: left; width: 100% }
-#messages .user { width: 5em; margin: 0 10px; text-align: right; font-weight: bold; display: block; float: left }
-#messages .time { text-align: left; margin: 0 10px; display: block; float: left; color: #777 }
-#messages .message { display: block; float: left; padding: 0 0 0 10px }
+#messages span.user { width: 5em; margin: 0 10px; text-align: right; font-weight: bold; display: block; float: left }
+#messages span.time { text-align: left; margin: 0 10px; display: block; float: left; color: #777; font-style: normal !important }
+#messages span.message { display: block; float: left; padding: 0 0 0 10px }
+#messages li.server { color: #999; font-style: italic }
 img.inline-image { width: 200px; border: 1px solid #ccc; padding: 2px }
 
 #input { clear: both; text-align: left; margin: 0 0 0 20px; padding: 0; }

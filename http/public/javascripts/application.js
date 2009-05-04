@@ -1,14 +1,14 @@
 var Display = {
-  add_message: function(text) {
-    $('messages').insert({ bottom: '<li>' + text + '</li>' });
+  add_message: function(text, className) {
+    var time_html = '<span class="time">\#{time}</span>'.interpolate({ time: this.dateText() });
+    $('messages').insert({ bottom: '<li class="' + className + '">' + time_html + ' ' + text + '</li>' });
     this.scrollMessagesToTop();
   },
 
   message: function(message) {
-    var date_text = this.dateText();
-    var text = '<span class="time">\#{time}</span> <span class="user">\#{user}</span> <span class="message">\#{message}</span>';
-    text = text.interpolate({ time: date_text, room: message['room'], user: this.truncateName(message['user']), message: this.decorateMessage(message['message']) });
-    this.add_message(text);
+    var text = '<span class="user">\#{user}</span> <span class="message">\#{message}</span>';
+    text = text.interpolate({ room: message['room'], user: this.truncateName(message['user']), message: this.decorateMessage(message['message']) });
+    this.add_message(text, 'message');
   },
 
   scrollMessagesToTop: function() {
@@ -69,7 +69,7 @@ var Display = {
 
   join_notice: function(join) {
     $('names').insert({ bottom: '<li>' + this.truncateName(join['user']) + '</li>' });
-    this.add_message(join['user'] + ' has joined the room');
+    this.add_message(join['user'] + ' has joined the room', 'server');
   },
 
   remove_user: function(name) {
@@ -78,12 +78,12 @@ var Display = {
 
   part_notice: function(part) {
     this.remove_user(part['user']);
-    this.add_message(part['user'] + ' has left the room');
+    this.add_message(part['user'] + ' has left the room', 'server');
   },
 
   quit_notice: function(quit) {
     this.remove_user(quit['user']);
-    this.add_message(quit['user'] + ' has quit');
+    this.add_message(quit['user'] + ' has quit', 'server');
   }
 };
 
