@@ -1,7 +1,7 @@
 var Display = {
   add_message: function(text) {
     $('messages').insert({ bottom: '<li>' + text + '</li>' });
-    $('messages').scrollTop = $('messages').scrollHeight;   
+    this.scrollMessagesToTop();
   },
 
   message: function(message) {
@@ -9,6 +9,10 @@ var Display = {
     var text = '<span class="time">\#{time}</span> <span class="user">\#{user}</span> <span class="message">\#{message}</span>';
     text = text.interpolate({ time: date_text, room: message['room'], user: this.truncateName(message['user']), message: this.decorateMessage(message['message']) });
     this.add_message(text);
+  },
+
+  scrollMessagesToTop: function() {
+    $('messages').scrollTop = $('messages').scrollHeight;   
   },
 
   zeroPad: function(value, length) {
@@ -108,6 +112,7 @@ function adaptSizes() {
   $('messages').setStyle({ width: windowSize.width - 220 + 'px' });
   $('messages').setStyle({ height: windowSize.height - 90 + 'px' });
   $('message').setStyle({ width: windowSize.width - 290 + 'px' });
+  Display.scrollMessagesToTop();
 }
 
 document.observe('dom:loaded', function() {
