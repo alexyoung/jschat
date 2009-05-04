@@ -135,12 +135,20 @@ document.observe('dom:loaded', function() {
 
     new Ajax.Request('/names', {
       method: 'get',
-      parameters: { time: new Date().getTime() }
-    });
+      parameters: { time: new Date().getTime() },
+      onFailure: function() { alert('Error connecting'); },
+      onSuccess: function(transport) {
+        updateMessages();
 
-    new Ajax.Request('/lastlog', {
-      method: 'get',
-      parameters: { time: new Date().getTime() }
+        new Ajax.Request('/lastlog', {
+          method: 'get',
+          parameters: { time: new Date().getTime() },
+          onSuccess: function() {
+            new PeriodicalExecuter(updateMessages, 3);
+          },
+          onFailure: function() { alert('Error connecting'); }
+        });
+      }
     });
 
     $('message').activate();
@@ -161,10 +169,6 @@ document.observe('dom:loaded', function() {
     Event.observe(window, 'unload', function() {
       new Ajax.Request('/quit');
     });
-  }
-
-  if ($('messages')) {
-    new PeriodicalExecuter(updateMessages, 3);
   }
 
   if ($('sign-on')) {
