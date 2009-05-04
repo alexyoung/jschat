@@ -150,5 +150,9 @@ document.observe('dom:loaded', function() {
   if ($('messages')) {
     new PeriodicalExecuter(updateMessages, 3);
   }
+
+  if ($('sign-on')) {
+    $('name').activate();
+  }
 });
 

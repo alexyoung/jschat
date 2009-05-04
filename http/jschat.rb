@@ -229,14 +229,7 @@ end
 
 # Identify
 get '/' do
-  html = <<-HTML
-    <form method="post" action="/identify">
-      Enter name: <input name="name" id="name" value="" type="text" />
-      and room: <input name="room" id="room" value="#jschat" type="room" />
-      <input type="submit" value="Go" />
-    </form> 
-  HTML
-  erb html
+  erb :index
 end
 
 post '/identify' do
