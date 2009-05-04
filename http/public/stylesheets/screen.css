@@ -22,6 +22,7 @@ h1 { text-align: left; margin-left: 20px }
 #messages span.time { text-align: left; margin: 0 0 0 5px; display: block; float: left; color: #777; font-style: normal !important }
 #messages span.message { display: inline; padding: 0 0 0 10px }
 #messages li.server { color: #999; font-style: italic }
+#messages li.server span.time { color: #999; margin-right: 1.75em }
 img.inline-image { width: 200px; border: 1px solid #ccc; padding: 2px }
 
 #input { clear: both; text-align: left; margin: 0 0 0 20px; padding: 0; }
