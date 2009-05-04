@@ -30,7 +30,7 @@ var Display = {
   },
 
   truncateName: function(text) {
-    return text.truncate(12);
+    return text.truncate(10);
   },
 
   extractURLs: function(text) {
