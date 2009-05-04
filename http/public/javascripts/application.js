@@ -133,14 +133,14 @@ document.observe('dom:loaded', function() {
       adaptSizes();
     });
 
-    new Ajax.Request('/names', {
+    new Ajax.Request('/lastlog', {
       method: 'get',
       parameters: { time: new Date().getTime() },
       onFailure: function() { alert('Error connecting'); },
       onSuccess: function(transport) {
         updateMessages();
 
-        new Ajax.Request('/lastlog', {
+        new Ajax.Request('/names', {
           method: 'get',
           parameters: { time: new Date().getTime() },
           onSuccess: function() {
