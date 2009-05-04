@@ -65,6 +65,16 @@ module JsChat
       room
     end
 
+    def lastlog
+      { 'display' => 'messages', 'messages' => @messages }
+    end
+
+    def add_to_lastlog(message)
+      @messages ||= []
+      @messages.push message
+      @messages = @messages[-100..-1] if @messages.size > 100
+    end
+
     def join(user)
       if @users.include? user
         Error.new('Already in that room')
@@ -91,6 +101,8 @@ module JsChat
       message['room'] = name
       response = { 'display' => 'message', 'message' => message }
 
+      add_to_lastlog response
+
       @users.each do |user|
         user.connection.send_response response
       end
@@ -105,6 +117,8 @@ module JsChat
     end
 
     def notice(user, message)
+      add_to_lastlog message
+
       @users.each do |u|
         if u != user
           u.connection.send_response(message)
@@ -148,6 +162,16 @@ module JsChat
     end
   rescue JsChat::Errors::InvalidName => exception
     exception
+  end
+
+  def lastlog(room, options = {})
+    room = Room.find room
+
+    if room and room.users.include? @user
+      room.lastlog
+    else
+      Error.new("Please join this room first")
+    end
   end
 
   def room_message(message, options)
@@ -259,7 +283,7 @@ module JsChat
     if input.has_key? 'identify'
       send_response identify(input['identify'])
     else
-      ['change', 'send', 'join', 'names', 'part'].each do |command|
+      ['lastlog', 'change', 'send', 'join', 'names', 'part'].each do |command|
         if @user.name.nil?
           return send_response(Error.new("Identify first"))
         end

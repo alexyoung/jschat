@@ -90,11 +90,17 @@ module JsChat
           @identification_error = json['error']
         elsif @identified and json['display'] == 'join'
           @messages << sanitize_json(json).to_json
-          # Get the names list
-          send_data({'names' => @room}.to_json)
         elsif @identified
           @messages << sanitize_json(json).to_json
         end
+      end
+
+      def names
+        send_data({'names' => @room}.to_json)
+      end
+
+      def lastlog
+        send_data({'lastlog' => @room}.to_json)
       end
 
       def sanitize_json(json)
@@ -257,6 +263,18 @@ get '/messages' do
   load_bridge
   @bridge.server.connection.polled
   messages_js
+end
+
+get '/names' do
+  load_bridge
+  @bridge.server.connection.names
+  "Request OK"
+end
+
+get '/lastlog' do
+  load_bridge
+  @bridge.server.connection.lastlog
+  "Request OK"
 end
 
 get '/chat' do

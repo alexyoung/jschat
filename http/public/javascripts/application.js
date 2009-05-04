@@ -11,6 +11,12 @@ var Display = {
     this.add_message(text, 'message');
   },
 
+  messages: function(messages) {
+    messages.each(function(json) {
+     this[json['display']](json[json['display']]);
+    }.bind(this));
+  },
+
   scrollMessagesToTop: function() {
     $('messages').scrollTop = $('messages').scrollHeight;   
   },
@@ -125,6 +131,16 @@ document.observe('dom:loaded', function() {
     
     Event.observe(window, 'resize', function() {
       adaptSizes();
+    });
+
+    new Ajax.Request('/names', {
+      method: 'get',
+      parameters: { time: new Date().getTime() }
+    });
+
+    new Ajax.Request('/lastlog', {
+      method: 'get',
+      parameters: { time: new Date().getTime() }
     });
 
     $('message').activate();

@@ -134,5 +134,13 @@ class TestJsChat < Test::Unit::TestCase
     response = JSON.parse @jschat.receive_data({ 'send' => 'hello', 'to' => 'alex' }.to_json)
     assert_equal 'hello', response['message']['message']
   end
+
+  def test_log_request
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    @jschat.receive_data({ 'send' => 'hello', 'to' => '#oublinet' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'lastlog' => '#oublinet' }.to_json)
+    assert_equal 'hello', response['messages'].last['message']['message']
+  end
 end
 
