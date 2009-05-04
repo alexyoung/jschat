@@ -110,7 +110,7 @@ function updateMessages() {
 function adaptSizes() {
   var windowSize = document.viewport.getDimensions();
   $('messages').setStyle({ width: windowSize.width - 220 + 'px' });
-  $('messages').setStyle({ height: windowSize.height - 98 + 'px' });
+  $('messages').setStyle({ height: windowSize.height - 100 + 'px' });
   $('message').setStyle({ width: windowSize.width - 290 + 'px' });
   Display.scrollMessagesToTop();
 }

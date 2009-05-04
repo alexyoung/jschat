@@ -6,7 +6,7 @@ h1, h2, h3, h4 { margin: 0; padding: 0; }
 h1 { text-align: left; margin-left: 20px }
 
 .header { position: absolute; top: 0; height: 59px; left: 0; width: 100%; z-index: 10; background-color: #ffc; clear: both; border-bottom: 1px solid #ccc }
-.header img { border: none; margin: 4px 0 0 0 }
+.header img { border: none; margin: 5px 0 0 0 }
 .header h1 { width: 200px; float: left }
 .header .navigation { float: right; list-style-type: none; margin: 18px 0 0 0; padding: 0 }
 .header .navigation li { float: left; margin: 0 20px 0 0; padding: 0 }
@@ -30,7 +30,7 @@ form { margin: 0; padding: 0; }
 #message:focus { background-color: #ffc }
 
 #info { text-align: left; margin: 0 0 0 20px }
-#room-name { padding-top: 10px }
+#room-name { padding: 10px 0 }
 
 ul#names { margin: 0; padding: 0; list-style-type: none } 
 ul#names li { margin: 0; padding: 0.25em 0; } 
