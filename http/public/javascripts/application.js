@@ -133,6 +133,14 @@ document.observe('dom:loaded', function() {
       adaptSizes();
     });
 
+    new Ajax.Request('/room-name', {
+      method: 'get',
+      parameters: { time: new Date().getTime() },
+      onSuccess: function(transport) {
+        $('room-name').innerHTML = transport.responseText;
+      }
+    });
+
     new Ajax.Request('/lastlog', {
       method: 'get',
       parameters: { time: new Date().getTime() },

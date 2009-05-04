@@ -293,6 +293,11 @@ post '/message' do
   "Message posted"
 end
 
+get '/room-name' do
+  load_bridge
+  @bridge.server.connection.room
+end
+
 post '/quit' do
   load_bridge
   @bridge.server.quit
