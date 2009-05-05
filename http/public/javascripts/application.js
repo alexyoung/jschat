@@ -119,7 +119,6 @@ function updateMessages() {
     method: 'get',
     parameters: { time: new Date().getTime(), room: currentRoom() },
     onSuccess: function(transport) {
-      console.log(transport.responseText);
       try {
         displayMessages(transport.responseText);
       } catch (exception) {
