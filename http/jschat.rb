@@ -122,30 +122,39 @@ module JsChat
       end
 
       def receive_data(data)
-        json = JSON.parse(data)
+        data.split("\n").each do |line|
+          json = {}
+          begin
+            json = JSON.parse(line)
+          rescue JSON::ParserError
+            puts "Error parsing:"
+            p line
+            return
+          end
 
-        puts "LINE FROM SERVER: #{data}"
+          puts "LINE FROM SERVER: #{line}"
 
-        if @identified == false and json['identified']
-          @identified = true
-          @name = json['name']
-        elsif @identified == false and json['display'] == 'error'
-          @identification_error = json['error']
-        elsif @identified
-          save_messages json
+          if @identified == false and json['identified']
+            @identified = true
+            @name = json['name']
+          elsif @identified == false and json['display'] == 'error'
+            @identification_error = json['error']
+          elsif @identified
+            save_messages json
+          end
         end
       end
 
       def names(room)
-        send_data({'names' => room}.to_json)
+        send_data({'names' => room}.to_json + "\n")
       end
 
       def lastlog(room)
-        send_data({'lastlog' => room}.to_json)
+        send_data({'lastlog' => room}.to_json + "\n")
       end
 
       def join(room)
-        send_data({'join' => room}.to_json)
+        send_data({'join' => room}.to_json + "\n")
       end
 
       def sanitize_json(json)
@@ -174,7 +183,7 @@ module JsChat
     end
 
     def identify(name)
-      @connection.send_data({'identify' => name}.to_json)
+      @connection.send_data({'identify' => name}.to_json + "\n")
     end
 
     def identified?
@@ -276,6 +285,13 @@ end
 
 # Identify
 get '/' do
+  load_bridge
+  if @bridge and @bridge.server
+    cookie = request.cookies['jschat-id']
+    response.set_cookie 'jschat-id', nil
+    @bridge.server.quit
+  end
+ 
   erb :index
 end
 

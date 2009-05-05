@@ -66,7 +66,6 @@ var Display = {
         });
       }
     } catch (exception) {
-      console.log(exception);
     }
     return text;
   },
@@ -170,6 +169,8 @@ var JoinManager = Class.create({
       try {
         if (json['join']) {
           return true;
+        } else if (json['error'] && json['error'].match(/already/i)) {
+          return true;
         }
       } catch (exception) {
       }
@@ -180,7 +181,7 @@ var JoinManager = Class.create({
     new Ajax.Request('/messages', {
       method: 'get',
       parameters: { time: new Date().getTime(), room: currentRoom() },
-      onSuccess: function(transport) {
+      onComplete: function(transport) {
         try {
           if (this.joinOK(transport.responseText)) {
             this.poller.stop();
