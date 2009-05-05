@@ -12,7 +12,7 @@ var Display = {
   },
 
   messages: function(messages) {
-    messages.each(function(json) {
+    $A(messages).each(function(json) {
      this[json['display']](json[json['display']]);
     }.bind(this));
   },
@@ -99,7 +99,10 @@ function displayMessages(text) {
     return;
   }
   json_set.each(function(json) {
-    Display[json['display']](json[json['display']]);
+    try {
+      Display[json['display']](json[json['display']]);
+    } catch (exception) {
+    }
   });
 }
 
@@ -108,7 +111,10 @@ function updateMessages() {
     method: 'get',
     parameters: { time: new Date().getTime() },
     onSuccess: function(transport) {
-      displayMessages(transport.responseText);
+      try {
+        displayMessages(transport.responseText);
+      } catch (exception) {
+      }
     }
   });
 }
@@ -119,6 +125,31 @@ function adaptSizes() {
   $('messages').setStyle({ height: windowSize.height - 100 + 'px' });
   $('message').setStyle({ width: windowSize.width - 290 + 'px' });
   Display.scrollMessagesToTop();
+}
+
+function initDisplay() {
+  new Ajax.Request('/room-name', {
+    method: 'get',
+    parameters: { time: new Date().getTime() },
+    onSuccess: function(transport) {
+      $('room-name').innerHTML = transport.responseText;
+      new Ajax.Request('/lastlog', {
+        method: 'get',
+        parameters: { time: new Date().getTime() },
+        onFailure: function() { alert('Error connecting'); },
+        onSuccess: function(transport) {
+          new Ajax.Request('/names', {
+            method: 'get',
+            parameters: { time: new Date().getTime() },
+            onSuccess: function() {
+              new PeriodicalExecuter(updateMessages, 3);
+            },
+            onFailure: function() { alert('Error connecting'); }
+          });
+        }
+      });
+    }
+  });
 }
 
 document.observe('dom:loaded', function() {
@@ -133,31 +164,7 @@ document.observe('dom:loaded', function() {
       adaptSizes();
     });
 
-    new Ajax.Request('/room-name', {
-      method: 'get',
-      parameters: { time: new Date().getTime() },
-      onSuccess: function(transport) {
-        $('room-name').innerHTML = transport.responseText;
-      }
-    });
-
-    new Ajax.Request('/lastlog', {
-      method: 'get',
-      parameters: { time: new Date().getTime() },
-      onFailure: function() { alert('Error connecting'); },
-      onSuccess: function(transport) {
-        updateMessages();
-
-        new Ajax.Request('/names', {
-          method: 'get',
-          parameters: { time: new Date().getTime() },
-          onSuccess: function() {
-            new PeriodicalExecuter(updateMessages, 3);
-          },
-          onFailure: function() { alert('Error connecting'); }
-        });
-      }
-    });
+    setTimeout(initDisplay, 1000);
 
     $('message').activate();
     $('post_message').observe('submit', function(e) {
