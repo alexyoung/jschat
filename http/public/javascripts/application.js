@@ -49,7 +49,16 @@ var Display = {
 
       if (links) {
         links.each(function(url) {
-          if (url.match(/(jp?g|png|gif)/i)) {
+          if (url.match(/youtube\.com/) && url.match(/watch\?v/)) {
+            var youtube_url_id = url.match(/\?v=([^&\s]*)/);
+            if (youtube_url_id && youtube_url_id[1]) {
+              var youtube_url = 'http://www.youtube.com/v/' + youtube_url_id[1];
+              var youtube_html = '<object width="480" height="295"><param name="movie" value="#{movie_url}"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="#{url}" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="480" height="295"></embed></object>';
+              text = text.replace(url, youtube_html.interpolate({ movie_url: youtube_url, url: youtube_url }));
+            } else {
+              text = text.replace(url, '<a href="\#{url}">\#{link_name}</a>'.interpolate({ url: url, link_name: url}));
+            }
+          } else if (url.match(/(jp?g|png|gif)/i)) {
             text = text.replace(url, '<a href="\#{url}" target="_blank"><img class="inline-image" src="\#{image}" /></a>'.interpolate({ url: url, image: url }));
           } else {
             text = text.replace(url, '<a href="\#{url}">\#{link_name}</a>'.interpolate({ url: url, link_name: url}));
