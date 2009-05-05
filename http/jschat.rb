@@ -60,18 +60,51 @@ module JsChat
 
       def messages(room)
         @messages ||= {}
+        @messages[room] ||= []
         @messages[room]
       end
 
       def clear_messages(room)
         @messages ||= {}
+        @messages[room] ||= []
         @messages[room].clear
       end
 
       def save_messages(messages)
         @messages ||= {}
-        @messages[last_room] ||= []
-        @messages[last_room] << messages
+        room = find_room(messages)
+        @messages[room] ||= []
+        @messages[room] << sanitize_json(messages).to_json
+      end
+
+      # This searches messages for a room name reference
+      # It's currently assumed that server responses are per-room,
+      # rather than a set of messages for multiple rooms
+      def find_room(messages)
+        if messages.kind_of? Array
+          messages.each do |message|
+            room_name = extract_room_name(message)
+            return room_name if room_name
+          end
+        else
+          return extract_room_name(messages)
+        end
+      end
+
+      def extract_room_name(message)
+        return unless message.kind_of? Hash
+
+        message.each do |field, value|
+          if field == 'room'
+            return value
+          elsif field == 'to'
+            return value
+          elsif value.kind_of? Hash
+            return extract_room_name value
+          elsif value.kind_of? Array
+            return find_room(value)
+          end
+        end
       end
 
       def last_room=(room)
@@ -98,10 +131,8 @@ module JsChat
           @name = json['name']
         elsif @identified == false and json['display'] == 'error'
           @identification_error = json['error']
-        elsif @identified and json['display'] == 'join'
-          save_messages sanitize_json(json).to_json
         elsif @identified
-          save_messages sanitize_json(json).to_json
+          save_messages json
         end
       end
 
@@ -252,7 +283,6 @@ post '/identify' do
   load_bridge
   @bridge.server.identify params['name']
   @bridge.server.connection.last_room = params['room']
-
   redirect '/identify-pending'
 end
 
