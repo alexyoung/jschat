@@ -298,6 +298,7 @@ module JsChat
       end
     end
   rescue Exception => exception
+    p data
     puts exception
   end
 end
