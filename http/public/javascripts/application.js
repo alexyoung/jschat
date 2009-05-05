@@ -9,6 +9,11 @@ var Display = {
     var text = '<span class="user">\#{user}</span> <span class="message">\#{message}</span>';
     text = text.interpolate({ room: message['room'], user: this.truncateName(message['user']), message: this.decorateMessage(message['message']) });
     this.add_message(text, 'message');
+
+    if (this.show_unread) {
+      this.unread++;
+      document.title = 'JsChat: (' + this.unread + ') new messages';
+    }
   },
 
   messages: function(messages) {
@@ -36,7 +41,7 @@ var Display = {
   },
 
   truncateName: function(text) {
-    return text.truncate(10);
+    return text.truncate(15);
   },
 
   extractURLs: function(text) {
@@ -271,6 +276,8 @@ function currentRoom() {
 }
 
 function initDisplay() {
+  Display.unread = 0;
+  Display.show_unread = false;
   $('room-name').innerHTML = currentRoom();
   poller = new PeriodicalExecuter(updateMessages, 3);
 
@@ -294,6 +301,15 @@ function initDisplay() {
   });
 
   new TabCompletion('message');
+
+  Event.observe(window, 'focus', function() {
+    Display.unread = 0;
+    Display.show_unread = false;
+    document.title = 'JsChat';
+  });
+  Event.observe(window, 'blur', function() {
+    Display.show_unread = true;
+  });
 }
 
 document.observe('dom:loaded', function() {
@@ -331,7 +347,7 @@ document.observe('dom:loaded', function() {
   }
 
   if ($('sign-on')) {
-    $('name').activate();
+    setTimeout(function() { $('name').activate() }, 500);
   }
 });
 
