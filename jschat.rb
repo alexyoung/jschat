@@ -277,22 +277,24 @@ module JsChat
   end
 
   def receive_data(data)
-    # Receive the identify request
-    input = JSON.parse data
+    data.split("\n").each do |data|
+      # Receive the identify request
+      input = JSON.parse data
 
-    if input.has_key? 'identify'
-      send_response identify(input['identify'])
-    else
-      ['lastlog', 'change', 'send', 'join', 'names', 'part'].each do |command|
-        if @user.name.nil?
-          return send_response(Error.new("Identify first"))
-        end
+      if input.has_key? 'identify'
+        send_response identify(input['identify'])
+      else
+        ['lastlog', 'change', 'send', 'join', 'names', 'part'].each do |command|
+          if @user.name.nil?
+            return send_response(Error.new("Identify first"))
+          end
 
-        if input.has_key? command
-          if command == 'send'
-            return send('send_message', input[command], input)
-          else
-            return send_response(send(command, input[command], input))
+          if input.has_key? command
+            if command == 'send'
+              return send('send_message', input[command], input)
+            else
+              return send_response(send(command, input[command], input))
+            end
           end
         end
       end
