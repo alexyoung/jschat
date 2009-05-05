@@ -24,7 +24,7 @@ module JsChat
 
       def post_init
         @identified = false
-        @messages = []
+        @messages = {}
         @disconnected = false
         @identification_error = nil
 
@@ -58,15 +58,27 @@ module JsChat
         @identified
       end
 
-      def messages
-        @messages
+      def messages(room)
+        @messages ||= {}
+        @messages[room]
       end
 
-      def room=(room)
-        @room = room
+      def clear_messages(room)
+        @messages ||= {}
+        @messages[room].clear
       end
 
-      def room ; @room ; end
+      def save_messages(messages)
+        @messages ||= {}
+        @messages[last_room] ||= []
+        @messages[last_room] << messages
+      end
+
+      def last_room=(room)
+        @last_room = room
+      end
+
+      def last_room ; @last_room ; end
       def disconnected? ; @disconnected ; end
 
       def unbind
@@ -84,23 +96,25 @@ module JsChat
         if @identified == false and json['identified']
           @identified = true
           @name = json['name']
-          puts "*** IDENTIFIED, JOINING ROOM"
-          send_data({'join' => @room}.to_json)
         elsif @identified == false and json['display'] == 'error'
           @identification_error = json['error']
         elsif @identified and json['display'] == 'join'
-          @messages << sanitize_json(json).to_json
+          save_messages sanitize_json(json).to_json
         elsif @identified
-          @messages << sanitize_json(json).to_json
+          save_messages sanitize_json(json).to_json
         end
       end
 
-      def names
-        send_data({'names' => @room}.to_json)
+      def names(room)
+        send_data({'names' => room}.to_json)
       end
 
-      def lastlog
-        send_data({'lastlog' => @room}.to_json)
+      def lastlog(room)
+        send_data({'lastlog' => room}.to_json)
+      end
+
+      def join(room)
+        send_data({'join' => room}.to_json)
       end
 
       def sanitize_json(json)
@@ -128,10 +142,6 @@ module JsChat
       @connection.close_connection
     end
 
-    def room=(room)
-      @connection.room = room
-    end
-
     def identify(name)
       @connection.send_data({'identify' => name}.to_json)
     end
@@ -146,14 +156,14 @@ module JsChat
       end
     end
 
-    def recent_messages
-      messages = @connection.messages.dup
-      @connection.messages.clear
+    def recent_messages(room)
+      messages = @connection.messages(room).dup
+      @connection.clear_messages(room)
       messages
     end
     
-    def send_message(message)
-      @connection.send_data({ 'to' => @connection.room, 'send' => message }.to_json + "\n")
+    def send_message(message, room)
+      @connection.send_data({ 'to' => room, 'send' => message }.to_json + "\n")
     end
   end
 
@@ -179,8 +189,8 @@ module JsChat
       @@servers[cookie] = server
     end
 
-    def recent_messages
-      @server.recent_messages
+    def recent_messages(room)
+      @server.recent_messages(room)
     end
 
     def setup_connection
@@ -228,8 +238,8 @@ helpers do
     @bridge = JsChat::Bridge.new(cookie) 
   end
 
-  def messages_js
-    '[' + @bridge.recent_messages.join(", ") + ']';
+  def messages_js(room)
+    '[' + @bridge.recent_messages(room).join(", ") + ']';
   end
 end
 
@@ -241,7 +251,7 @@ end
 post '/identify' do
   load_bridge
   @bridge.server.identify params['name']
-  @bridge.server.room = params['room']
+  @bridge.server.connection.last_room = params['room']
 
   redirect '/identify-pending'
 end
@@ -251,7 +261,7 @@ get '/identify-pending' do
   load_bridge
 
   if @bridge.server.identified?
-    redirect '/chat'
+    redirect "/chat/#{@bridge.server.connection.last_room}"
   elsif @bridge.server.connection.identification_error
     @bridge.server.connection.identification_error.to_json
   else
@@ -262,22 +272,32 @@ end
 get '/messages' do
   load_bridge
   @bridge.server.connection.polled
-  messages_js
+  @bridge.server.connection.last_room = params['room']
+  messages_js params['room']
 end
 
 get '/names' do
   load_bridge
-  @bridge.server.connection.names
+  @bridge.server.connection.names params['room']
+  @bridge.server.connection.last_room = params['room']
   "Request OK"
 end
 
 get '/lastlog' do
   load_bridge
-  @bridge.server.connection.lastlog
+  @bridge.server.connection.lastlog params['room']
+  @bridge.server.connection.last_room = params['room']
   "Request OK"
 end
 
-get '/chat' do
+post '/join' do
+  load_bridge
+  @bridge.server.connection.join(params['room'])
+  @bridge.server.connection.last_room = params['room']
+  "Request OK"
+end
+
+get '/chat/' do
   load_bridge
 
   if @bridge.server.identified?
@@ -289,13 +309,9 @@ end
 
 post '/message' do
   load_bridge
-  @bridge.server.send_message params['message']
+  @bridge.server.connection.last_room = params['to']
+  @bridge.server.send_message params['message'], params['to']
   "Message posted"
-end
-
-get '/room-name' do
-  load_bridge
-  @bridge.server.connection.room
 end
 
 post '/quit' do

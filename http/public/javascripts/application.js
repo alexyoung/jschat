@@ -109,7 +109,7 @@ function displayMessages(text) {
 function updateMessages() {
   new Ajax.Request('/messages', {
     method: 'get',
-    parameters: { time: new Date().getTime() },
+    parameters: { time: new Date().getTime(), room: currentRoom() },
     onSuccess: function(transport) {
       try {
         displayMessages(transport.responseText);
@@ -127,20 +127,24 @@ function adaptSizes() {
   Display.scrollMessagesToTop();
 }
 
+function currentRoom() {
+  return window.location.hash;
+}
+
 function initDisplay() {
-  new Ajax.Request('/room-name', {
-    method: 'get',
-    parameters: { time: new Date().getTime() },
-    onSuccess: function(transport) {
-      $('room-name').innerHTML = transport.responseText;
+  $('room-name').innerHTML = currentRoom();
+
+  new Ajax.Request('/join', {
+    parameters: { room: currentRoom() },
+    onSuccess: function() {
       new Ajax.Request('/lastlog', {
         method: 'get',
-        parameters: { time: new Date().getTime() },
+        parameters: { time: new Date().getTime(), room: currentRoom() },
         onFailure: function() { alert('Error connecting'); },
         onSuccess: function(transport) {
           new Ajax.Request('/names', {
             method: 'get',
-            parameters: { time: new Date().getTime() },
+            parameters: { time: new Date().getTime(), room: currentRoom() },
             onSuccess: function() {
               new PeriodicalExecuter(updateMessages, 3);
             },
@@ -173,7 +177,7 @@ document.observe('dom:loaded', function() {
       $('message').value = '';
       new Ajax.Request('/message', {
         method: 'post',
-        parameters: { 'message': message },
+        parameters: { 'message': message, 'to': currentRoom() },
         onSuccess: function(transport) {
         }
       });
