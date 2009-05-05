@@ -119,9 +119,11 @@ function updateMessages() {
     method: 'get',
     parameters: { time: new Date().getTime(), room: currentRoom() },
     onSuccess: function(transport) {
+      console.log(transport.responseText);
       try {
         displayMessages(transport.responseText);
       } catch (exception) {
+        console.log(exception);
       }
     }
   });
@@ -141,83 +143,27 @@ function currentRoom() {
 
 function initDisplay() {
   $('room-name').innerHTML = currentRoom();
-  var joiner = new JoinManager();
-}
+  poller = new PeriodicalExecuter(updateMessages, 3);
 
-var JoinManager = Class.create({
-  initialize: function() {
-    this.join();
-    this.retries = 0;
-    this.poller = new PeriodicalExecuter(this.checkJoined.bindAsEventListener(this), 3);
-  },
-
-  join: function() {
-    new Ajax.Request('/join', {
-      parameters: { room: currentRoom() },
-      onSuccess: function() {
-        pollUntilJoined();
-      }
-    });
-  },
-
-  joinOK: function(text) {
-    var json_set = text.evalJSON(true);
-    if (json_set.length == 0) {
-      return false;
+  new Ajax.Request('/join', {
+    method: 'post',
+    parameters: { time: new Date().getTime(), room: currentRoom() },
+    onComplete: function() {
+      new Ajax.Request('/lastlog', {
+        method: 'get',
+        parameters: { time: new Date().getTime(), room: currentRoom() },
+        onFailure: function() { alert('Error connecting'); },
+        onComplete: function() {
+          new Ajax.Request('/names', {
+            method: 'get',
+            parameters: { time: new Date().getTime(), room: currentRoom() },
+            onFailure: function() { alert('Error connecting'); }
+          });
+        }
+      });
     }
-    return json_set.find(function(json) {
-      try {
-        if (json['join']) {
-          return true;
-        } else if (json['error'] && json['error'].match(/already/i)) {
-          return true;
-        }
-      } catch (exception) {
-      }
-    });
-  },
-
-  checkJoined: function() {
-    new Ajax.Request('/messages', {
-      method: 'get',
-      parameters: { time: new Date().getTime(), room: currentRoom() },
-      onComplete: function(transport) {
-        try {
-          if (this.joinOK(transport.responseText)) {
-            this.poller.stop();
-            this.setupInterface();
-          } else {
-            this.retries++;
-          }
-
-          if (this.retries > 5) {
-            alert('Connection error');
-            this.poller.stop();
-          }
-        } catch (exception) {
-        }
-      }.bind(this)
-    });
-  },
-
-  setupInterface: function() {
-    new Ajax.Request('/lastlog', {
-      method: 'get',
-      parameters: { time: new Date().getTime(), room: currentRoom() },
-      onFailure: function() { alert('Error connecting'); },
-      onSuccess: function(transport) {
-        new Ajax.Request('/names', {
-          method: 'get',
-          parameters: { time: new Date().getTime(), room: currentRoom() },
-          onSuccess: function() {
-            this.poller = new PeriodicalExecuter(updateMessages, 3);
-          },
-          onFailure: function() { alert('Error connecting'); }
-        });
-      }
-    });
-  }
-});
+  });
+}
 
 document.observe('dom:loaded', function() {
   if ($('room') && window.location.hash) {

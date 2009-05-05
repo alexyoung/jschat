@@ -269,7 +269,7 @@ helpers do
   def load_bridge
     cookie = request.cookies['jschat-id']
 
-    if cookie.nil?
+    if cookie.nil? or cookie.empty?
       cookie = JsChat::Bridge.new_cookie
       response.set_cookie 'jschat-id', cookie
       JsChat::Bridge.new_server cookie
@@ -285,13 +285,7 @@ end
 
 # Identify
 get '/' do
-  load_bridge
-  if @bridge and @bridge.server
-    cookie = request.cookies['jschat-id']
-    response.set_cookie 'jschat-id', nil
-    @bridge.server.quit
-  end
- 
+  response.set_cookie 'jschat-id', ''
   erb :index
 end
 
