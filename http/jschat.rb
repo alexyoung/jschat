@@ -213,11 +213,15 @@ module JsChat
 
     def initialize(cookie)
       @cookie = cookie
-      setup_connection
+      @server = @@servers[@cookie]
     end
 
     def self.servers
       @@servers
+    end
+
+    def self.find_server(cookie)
+      @@servers[cookie]
     end
 
     def self.new_cookie
@@ -268,6 +272,12 @@ helpers do
 
   def load_bridge
     cookie = request.cookies['jschat-id']
+    JsChat::Bridge.find_server cookie
+    @bridge = JsChat::Bridge.new(cookie) 
+  end
+
+  def load_or_create_bridge
+    cookie = request.cookies['jschat-id']
 
     if cookie.nil? or cookie.empty?
       cookie = JsChat::Bridge.new_cookie
@@ -276,6 +286,7 @@ helpers do
     end
 
     @bridge = JsChat::Bridge.new(cookie) 
+    @bridge.setup_connection
   end
 
   def messages_js(room)
@@ -290,7 +301,7 @@ get '/' do
 end
 
 post '/identify' do
-  load_bridge
+  load_or_create_bridge
   @bridge.server.identify params['name']
   @bridge.server.connection.last_room = params['room']
   redirect '/identify-pending'
@@ -312,9 +323,13 @@ end
 
 get '/messages' do
   load_bridge
-  @bridge.server.connection.polled
-  @bridge.server.connection.last_room = params['room']
-  messages_js params['room']
+  if @bridge.nil? or @bridge.server.nil?
+    raise "Lost bridge connection"
+  else
+    @bridge.server.connection.polled
+    @bridge.server.connection.last_room = params['room']
+    messages_js params['room']
+  end
 end
 
 get '/names' do

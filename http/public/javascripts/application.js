@@ -135,7 +135,13 @@ function updateMessages() {
       try {
         displayMessages(transport.responseText);
       } catch (exception) {
+        console.log(transport.responseText);
+        console.log(exception);
       }
+    },
+    onFailure: function(request) {
+      poller.stop();
+      Display.add_message('Server error: <a href="/">please reconnect</a>', 'server');
     }
   });
 }
@@ -347,7 +353,7 @@ function signOn(retries) {
         showError('Connection error: #{error}'.interpolate({ exception: exception }));
       }
     },
-    onError: function() {
+    onFailure: function() {
       showError('Connection error');
     }
   });
@@ -360,11 +366,7 @@ document.observe('dom:loaded', function() {
 
   if ($('post_message')) {
     adaptSizes();
-    
-    Event.observe(window, 'resize', function() {
-      adaptSizes();
-    });
-
+    Event.observe(window, 'resize', adaptSizes);
     setTimeout(initDisplay, 1000);
 
     $('message').activate();
@@ -381,9 +383,7 @@ document.observe('dom:loaded', function() {
         default:
           new Ajax.Request('/message', {
             method: 'post',
-            parameters: { 'message': message, 'to': currentRoom() },
-            onSuccess: function(transport) {
-            }
+            parameters: { 'message': message, 'to': currentRoom() }
           });
         break;
       }
