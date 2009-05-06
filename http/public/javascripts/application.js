@@ -282,6 +282,14 @@ function currentRoom() {
   return window.location.hash;
 }
 
+function namesRequest() {
+  new Ajax.Request('/names', {
+    method: 'get',
+    parameters: { time: new Date().getTime(), room: currentRoom() },
+    onFailure: function() { alert('Error fetching names list'); }
+  });
+}
+
 function initDisplay() {
   Display.unread = 0;
   Display.show_unread = false;
@@ -297,11 +305,7 @@ function initDisplay() {
         parameters: { time: new Date().getTime(), room: currentRoom() },
         onFailure: function() { alert('Error connecting'); },
         onComplete: function() {
-          new Ajax.Request('/names', {
-            method: 'get',
-            parameters: { time: new Date().getTime(), room: currentRoom() },
-            onFailure: function() { alert('Error connecting'); }
-          });
+          setTimeout(namesRequest, 250);
         }
       });
     }
@@ -368,13 +372,21 @@ document.observe('dom:loaded', function() {
       var element = Event.element(e);
       var message = $('message').value;
       $('message').value = '';
-      new Ajax.Request('/message', {
-        method: 'post',
-        parameters: { 'message': message, 'to': currentRoom() },
-        onSuccess: function(transport) {
-        }
-      });
 
+      switch (message) {
+        case '/names':
+          namesRequest();
+        break;
+
+        default:
+          new Ajax.Request('/message', {
+            method: 'post',
+            parameters: { 'message': message, 'to': currentRoom() },
+            onSuccess: function(transport) {
+            }
+          });
+        break;
+      }
       Event.stop(e);
     });
 
