@@ -93,7 +93,7 @@ class TestJsChat < Test::Unit::TestCase
 
   def test_identify_twice
     @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    expected = { 'display' => 'error', 'error' => { 'message' => 'Nick already taken' } }.to_json + "\n"
+    expected = { 'display' => 'error', 'error' => { 'message' => 'Name already taken' } }.to_json + "\n"
     assert_equal expected, @jschat.receive_data({ 'identify' => 'nick' }.to_json)
   end
 

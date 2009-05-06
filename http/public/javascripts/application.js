@@ -319,6 +319,36 @@ function initDisplay() {
   });
 }
 
+function signOn(retries) {
+  function showError(message) {
+    $('feedback').innerHTML = '<div class="error">#{message}</div>'.interpolate({ message: message });
+    $('feedback').show();
+  }
+
+  new Ajax.Request('/identify', {
+    parameters: $('sign-on').serialize(true),
+    onSuccess: function(transport) {
+      try {
+        var json = transport.responseText.evalJSON(true);
+        if (json['action'] == 'reload' && retries < 4) {
+          setTimeout(function() { signOn(retries + 1) }, 500);
+        } else if (json['action'] == 'redirect') {
+          window.location = json['to'];
+        } else if (json['error']) {
+          showError(json['error']['message']);
+        } else {
+          showError('Connection error');
+        }
+      } catch (exception) {
+        showError('Connection error: #{error}'.interpolate({ exception: exception }));
+      }
+    },
+    onError: function() {
+      showError('Connection error');
+    }
+  });
+}
+
 document.observe('dom:loaded', function() {
   if ($('room') && window.location.hash) {
     $('room').value = window.location.hash;
@@ -355,6 +385,13 @@ document.observe('dom:loaded', function() {
 
   if ($('sign-on')) {
     setTimeout(function() { $('name').activate() }, 500);
+
+    /* The form uses Ajax to sign on */
+    $('sign-on').observe('submit', function(e) {
+      signOn(0);
+      Event.stop(e);
+      return false;
+    });
   }
 });
 

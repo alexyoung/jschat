@@ -170,7 +170,7 @@ module JsChat
   # {"identify":"alex"}
   def identify(name, options = {})
     if name_taken? name
-      Error.new('Nick already taken')
+      Error.new('Name already taken')
     else
       @user.name = name
       { 'display' => 'identified', 'identified' => @user }

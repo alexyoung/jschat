@@ -138,7 +138,7 @@ module JsChat
             @identified = true
             @name = json['name']
           elsif @identified == false and json['display'] == 'error'
-            @identification_error = json['error']
+            @identification_error = json
           elsif @identified
             save_messages json
           end
@@ -301,10 +301,11 @@ get '/identify-pending' do
   load_bridge
 
   if @bridge.server.identified?
-    redirect "/chat/#{@bridge.server.connection.last_room}"
+    { 'action' => 'redirect', 'to' => "/chat/#{@bridge.server.connection.last_room}" }.to_json
   elsif @bridge.server.connection.identification_error
     @bridge.server.connection.identification_error.to_json
   else
+    # Waiting for a response
     { 'action' => 'reload' }.to_json
   end
 end
