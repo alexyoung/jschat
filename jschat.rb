@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'eventmachine'
 require 'json'
+require 'time'
 
 module JsChat
   class User
@@ -71,8 +72,13 @@ module JsChat
 
     def add_to_lastlog(message)
       @messages ||= []
-      @messages.push message
-      @messages = @messages[-100..-1] if @messages.size > 100
+      if message
+        if message.has_key? 'display'
+          message[message['display']]['time'] = Time.now.utc
+        end
+        @messages.push message
+        @messages = @messages[-100..-1] if @messages.size > 100
+      end
     end
 
     def join(user)
@@ -278,9 +284,9 @@ module JsChat
 
   def receive_data(data)
     response = ''
-    data.split("\n").each do |data|
+    data.strip.split("\n").each do |line|
       # Receive the identify request
-      input = JSON.parse data
+      input = JSON.parse line 
 
       if input.has_key? 'identify'
         response << send_response(identify(input['identify']))
@@ -288,11 +294,13 @@ module JsChat
         ['lastlog', 'change', 'send', 'join', 'names', 'part'].each do |command|
           if @user.name.nil?
             response << send_response(Error.new("Identify first"))
+            return response
           end
 
           if input.has_key? command
             if command == 'send'
-              response << send('send_message', input[command], input)
+              message_result = send('send_message', input[command], input)
+              response << message_result if message_result.kind_of? String
             else
               response << send_response(send(command, input[command], input))
             end
@@ -303,8 +311,15 @@ module JsChat
 
     response
   rescue Exception => exception
+    puts "Data that raised exception: #{exception}"
     p data
-    puts exception
+    print_call_stack
   end
-end
 
+  def print_call_stack(from = 2, to = 5)
+    puts "Stack:"
+    (from..to).each do |index|
+      puts "\t#{caller[index]}"
+    end  
+  end  
+end

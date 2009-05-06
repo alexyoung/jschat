@@ -67,8 +67,8 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_join_without_identifying
-    expected = { 'display' => 'error', 'error' => { 'message' => 'Identify first' } }.to_json + "\n"
-    assert_equal expected, @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    assert response['error']
   end
 
   def test_join_more_than_once

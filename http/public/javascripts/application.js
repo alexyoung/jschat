@@ -1,31 +1,4 @@
-var Display = {
-  add_message: function(text, className) {
-    var time_html = '<span class="time">\#{time}</span>'.interpolate({ time: this.dateText() });
-    $('messages').insert({ bottom: '<li class="' + className + '">' + time_html + ' ' + text + '</li>' });
-    this.scrollMessagesToTop();
-  },
-
-  message: function(message) {
-    var text = '<span class="user">\#{user}</span> <span class="message">\#{message}</span>';
-    text = text.interpolate({ room: message['room'], user: this.truncateName(message['user']), message: this.decorateMessage(message['message']) });
-    this.add_message(text, 'message');
-
-    if (this.show_unread) {
-      this.unread++;
-      document.title = 'JsChat: (' + this.unread + ') new messages';
-    }
-  },
-
-  messages: function(messages) {
-    $A(messages).each(function(json) {
-     this[json['display']](json[json['display']]);
-    }.bind(this));
-  },
-
-  scrollMessagesToTop: function() {
-    $('messages').scrollTop = $('messages').scrollHeight;   
-  },
-
+var TextHelper = {
   zeroPad: function(value, length) {
     value = value.toString();
     if (value.length >= length) {
@@ -35,8 +8,11 @@ var Display = {
     }
   },
 
-  dateText: function() {
-    var d = new Date;
+  dateText: function(time) {
+    var d = new Date();
+    if (typeof time != 'undefined') {
+      d = new Date(Date.parse(time));
+    }
     return this.zeroPad(d.getHours(), 2) + ':' + this.zeroPad(d.getMinutes(), 2); 
   },
 
@@ -73,12 +49,44 @@ var Display = {
     } catch (exception) {
     }
     return text;
+  }
+}
+
+var Display = {
+  add_message: function(text, className, time) {
+    var time_html = '<span class="time">\#{time}</span>'.interpolate({ time: TextHelper.dateText(time) });
+    $('messages').insert({ bottom: '<li class="' + className + '">' + time_html + ' ' + text + '</li>' });
+    this.scrollMessagesToTop();
+  },
+
+  message: function(message) {
+    var text = '<span class="user">\#{user}</span> <span class="message">\#{message}</span>';
+    text = text.interpolate({ room: message['room'], user: TextHelper.truncateName(message['user']), message: TextHelper.decorateMessage(message['message']) });
+    this.add_message(text, 'message', message['time']);
+
+    if (this.show_unread) {
+      this.unread++;
+      document.title = 'JsChat: (' + this.unread + ') new messages';
+    }
+  },
+
+  messages: function(messages) {
+    $A(messages).each(function(json) {
+      try {
+        this[json['display']](json[json['display']]);
+      } catch (exception) {
+      }
+    }.bind(this));
+  },
+
+  scrollMessagesToTop: function() {
+    $('messages').scrollTop = $('messages').scrollHeight;   
   },
 
   names: function(names) {
     $('names').innerHTML = '';
     names.each(function(name) {
-      $('names').insert({ bottom: '<li>' + this.truncateName(name) + '</li>' });
+      $('names').insert({ bottom: '<li>' + TextHelper.truncateName(name) + '</li>' });
     }.bind(this));
   },
 
@@ -87,8 +95,8 @@ var Display = {
   },
 
   join_notice: function(join) {
-    $('names').insert({ bottom: '<li>' + this.truncateName(join['user']) + '</li>' });
-    this.add_message(join['user'] + ' has joined the room', 'server');
+    $('names').insert({ bottom: '<li>' + TextHelper.truncateName(join['user']) + '</li>' });
+    this.add_message(join['user'] + ' has joined the room', 'server', join['time']);
   },
 
   remove_user: function(name) {
@@ -97,12 +105,12 @@ var Display = {
 
   part_notice: function(part) {
     this.remove_user(part['user']);
-    this.add_message(part['user'] + ' has left the room', 'server');
+    this.add_message(part['user'] + ' has left the room', 'server', part['time']);
   },
 
   quit_notice: function(quit) {
     this.remove_user(quit['user']);
-    this.add_message(quit['user'] + ' has quit', 'server');
+    this.add_message(quit['user'] + ' has quit', 'server', quit['time']);
   }
 };
 
@@ -127,7 +135,6 @@ function updateMessages() {
       try {
         displayMessages(transport.responseText);
       } catch (exception) {
-        console.log(exception);
       }
     }
   });
