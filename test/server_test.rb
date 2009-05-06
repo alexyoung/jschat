@@ -54,6 +54,18 @@ class TestJsChat < Test::Unit::TestCase
     assert_equal expected, @jschat.receive_data({ 'identify' => '@lex' }.to_json)
   end
 
+  def test_ensure_nicks_are_unique
+    @jschat.receive_data({ 'identify' => 'alex' }.to_json)
+
+    # Obvious duplicate
+    result = JSON.parse @jschat.receive_data({ 'identify' => 'alex' }.to_json)
+    assert result['error']
+
+    # Case
+    result = JSON.parse @jschat.receive_data({ 'identify' => 'Alex' }.to_json)
+    assert result['error']
+  end
+
   def test_invalid_room_name
     @jschat.receive_data({ 'identify' => 'bob' }.to_json)
     response = JSON.parse @jschat.receive_data({ 'join' => 'oublinet' }.to_json)
@@ -120,6 +132,14 @@ class TestJsChat < Test::Unit::TestCase
     assert @jschat.receive_data({ 'send' => 'hello', 'to' => '#oublinet' }.to_json)
   end
 
+  def test_message_ignores_case
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    @jschat.add_user 'alex', '#oublinet'
+    response = @jschat.receive_data({ 'send' => 'hello', 'to' => '#Oublinet' }.to_json)
+    assert response
+  end
+
   def test_part
     @jschat.receive_data({ 'identify' => 'nick' }.to_json)
     @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
@@ -132,6 +152,13 @@ class TestJsChat < Test::Unit::TestCase
     @jschat.receive_data({ 'identify' => 'nick' }.to_json)
     @jschat.add_user 'alex', '#oublinet'
     response = JSON.parse @jschat.receive_data({ 'send' => 'hello', 'to' => 'alex' }.to_json)
+    assert_equal 'hello', response['message']['message']
+  end
+
+  def test_private_message_ignores_case
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.add_user 'alex', '#oublinet'
+    response = JSON.parse @jschat.receive_data({ 'send' => 'hello', 'to' => 'Alex' }.to_json)
     assert_equal 'hello', response['message']['message']
   end
 

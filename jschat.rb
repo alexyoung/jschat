@@ -51,7 +51,7 @@ module JsChat
       @@rooms ||= []
 
       if item.kind_of? String
-        @@rooms.find { |room| room.name == item }
+        @@rooms.find { |room| room.name.downcase == item.downcase if room.name }
       elsif item.kind_of? User
         @@rooms.find_all { |room| room.users.include? item }
       end
@@ -158,10 +158,19 @@ module JsChat
     end
   end
 
+  # User initially has a nil name
+  def users_with_names
+    @@users.find_all { |u| u.name }
+  end
+
+  def name_taken?(name)
+    users_with_names.find { |user| user.name.downcase == name.downcase }
+  end
+
   # {"identify":"alex"}
   def identify(name, options = {})
-    if @@users.find { |user| user.name == name }
-      Error.new("Nick already taken")
+    if name_taken? name
+      Error.new('Nick already taken')
     else
       @user.name = name
       { 'display' => 'identified', 'identified' => @user }
@@ -191,7 +200,7 @@ module JsChat
   end
 
   def private_message(message, options)
-    user = @@users.find { |u| u.name == options['to'] }
+    user = users_with_names.find { |u| u.name.downcase == options['to'].downcase }
 
     if user
       # Return the message to the user, and send it to the other person too
