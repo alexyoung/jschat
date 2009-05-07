@@ -1,3 +1,36 @@
+var LinkHelper = {
+  url: function(url) {
+    return url.match(/(https?:\/\/[^\s]*)/gi);
+  },
+
+  link: function(url) {
+    return '<a href="\#{url}" target="_blank">\#{link_name}</a>'.interpolate({ url: url, link_name: url});
+  },
+
+  image_url: function(url) {
+    return url.match(/(jp?g|png|gif)/i);
+  },
+
+  image: function(url) {
+    return '<a href="\#{url}" target="_blank"><img class="inline-image" src="\#{image}" /></a>'.interpolate({ url: url, image: url })
+  },
+
+  youtube_url: function(url) {
+    return url.match(/youtube\.com/) && url.match(/watch\?v/);
+  },
+
+  youtube: function(url) {
+    var youtube_url_id = url.match(/\?v=([^&\s]*)/);
+    if (youtube_url_id && youtube_url_id[1]) {
+      var youtube_url = 'http://www.youtube.com/v/' + youtube_url_id[1];
+      var youtube_html = '<object width="480" height="295"><param name="movie" value="#{movie_url}"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="#{url}" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="480" height="295"></embed></object>';
+      return youtube_html.interpolate({ movie_url: youtube_url, url: youtube_url });
+    } else {
+      return this.link(url);
+    }
+  }
+};
+
 var TextHelper = {
   zeroPad: function(value, length) {
     value = value.toString();
@@ -20,37 +53,48 @@ var TextHelper = {
     return text.truncate(15);
   },
 
-  extractURLs: function(text) {
-    return text.match(/(http:\/\/[^\s]*)/g);
+  decorateMessage: function(text) {
+    return this.autoLink(text);
   },
 
-  decorateMessage: function(text) {
+  autoLink: function(text) {
+    var result = '';
     try {
-      var links = this.extractURLs(text);
-
-      if (links) {
-        links.each(function(url) {
-          if (url.match(/youtube\.com/) && url.match(/watch\?v/)) {
-            var youtube_url_id = url.match(/\?v=([^&\s]*)/);
-            if (youtube_url_id && youtube_url_id[1]) {
-              var youtube_url = 'http://www.youtube.com/v/' + youtube_url_id[1];
-              var youtube_html = '<object width="480" height="295"><param name="movie" value="#{movie_url}"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="#{url}" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="480" height="295"></embed></object>';
-              text = text.replace(url, youtube_html.interpolate({ movie_url: youtube_url, url: youtube_url }));
-            } else {
-              text = text.replace(url, '<a href="\#{url}">\#{link_name}</a>'.interpolate({ url: url, link_name: url}));
-            }
-          } else if (url.match(/(jp?g|png|gif)/i)) {
-            text = text.replace(url, '<a href="\#{url}" target="_blank"><img class="inline-image" src="\#{image}" /></a>'.interpolate({ url: url, image: url }));
-          } else {
-            text = text.replace(url, '<a href="\#{url}">\#{link_name}</a>'.interpolate({ url: url, link_name: url}));
-          }
-        });
+      if (!LinkHelper.url(text)) {
+        return text;
       }
+
+      $A(text.split(/(https?:\/\/[^\s]*)/gi)).each(function(link) {
+        if (link.match(/href="/)) {
+          result += link;
+        } else {
+          if (LinkHelper.youtube_url(link)) {
+            result += link.replace(link, LinkHelper.youtube(link));
+          } else if (LinkHelper.image_url(link)) {
+            result += link.replace(link, LinkHelper.image(link));
+          } else if (LinkHelper.url(link)) {
+            result += link.replace(link, LinkHelper.link(link));
+          } else {
+            result += link;
+          }
+        }
+      });
     } catch (exception) {
     }
-    return text;
+    return result;
   }
 }
+
+var Change = {
+  user: function(user) {
+    if (user['name']) {
+      change = $H(user['name']).toArray()[0];
+      var old = change[0],
+          new_value = change[1];
+      Display.add_message("#{old} is now known as #{new_value}".interpolate({ old: old, new_value: new_value }), 'server', user['time']);
+    }
+  }
+};
 
 var Display = {
   add_message: function(text, className, time) {
@@ -75,7 +119,11 @@ var Display = {
     this.ignore_notices = true;
     $A(messages).each(function(json) {
       try {
-        this[json['display']](json[json['display']]);
+        if (json['change']) {
+          Change[json['change']](json[json['change']]);
+        } else {
+          this[json['display']](json[json['display']]);
+        }
       } catch (exception) {
       }
     }.bind(this));
@@ -123,6 +171,14 @@ var Display = {
   quit_notice: function(quit) {
     this.remove_user(quit['user']);
     this.add_message(quit['user'] + ' has quit', 'server', quit['time']);
+  },
+
+  notice: function(notice) {
+    this.add_message(notice, 'server');
+  },
+
+  error: function(error) {
+    this.add_message(error['message'], 'error');
   }
 };
 
@@ -150,9 +206,9 @@ var UserCommands = {
 
   '/(name|nick)\\s+(.*)': function(name) {
     name = name[2];
-    new Ajax.Request('/identify', {
+    new Ajax.Request('/change-name', {
       method: 'post',
-      parameters: { name: name, room: currentRoom() },
+      parameters: { name: name },
       onSuccess: function() {
         JsChatRequest.get('/names');
       },
@@ -174,7 +230,11 @@ function displayMessages(text) {
   }
   json_set.each(function(json) {
     try {
-      Display[json['display']](json[json['display']]);
+      if (json['change']) {
+        Change[json['change']](json[json['change']]);
+      } else {
+        Display[json['display']](json[json['display']]);
+      }
     } catch (exception) {
     }
   });

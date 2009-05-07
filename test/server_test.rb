@@ -169,5 +169,21 @@ class TestJsChat < Test::Unit::TestCase
     response = JSON.parse @jschat.receive_data({ 'lastlog' => '#oublinet' }.to_json)
     assert_equal 'hello', response['messages'].last['message']['message']
   end
+
+  def test_name_change
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    @jschat.add_user 'alex', '#oublinet'
+    response = JSON.parse @jschat.receive_data({ 'change' => 'user', 'user' => { 'name' => 'bob' }}.to_json)
+    assert_equal 'notice', response['display']
+  end
+
+  def test_name_change_duplicate
+    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    @jschat.add_user 'alex', '#oublinet'
+    response = JSON.parse @jschat.receive_data({ 'change' => 'user', 'user' => { 'name' => 'alex' }}.to_json)
+    assert_equal 'error', response['display']
+  end
 end
 

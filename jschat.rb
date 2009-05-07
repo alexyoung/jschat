@@ -18,7 +18,9 @@ module JsChat
     end
 
     def name=(name)
-      if User.valid_name? name
+      if @connection and @connection.name_taken? name
+        raise JsChat::Errors::InvalidName.new('Name taken')
+      elsif User.valid_name?(name)
         @name = name
       else
         raise JsChat::Errors::InvalidName.new('Invalid name')
@@ -32,6 +34,23 @@ module JsChat
     def private_message(message)
       response = { 'display' => 'message', 'message' => message }
       @connection.send_response response
+    end
+
+    def change(params)
+      # Valid options for change
+      ['name'].each do |field|
+        if params[field]
+          old_value = send(field)
+          send "#{field}=", params[field]
+          @rooms.each do |room|
+            response = { 'change' => 'user',
+                         'room' => room.name,
+                         'user' => { field => { old_value => params[field] } } }
+            room.change_notice self, response
+            return [field, params[field]]
+          end
+        end
+      end
     end
   end
 
@@ -75,6 +94,8 @@ module JsChat
       if message
         if message.has_key? 'display'
           message[message['display']]['time'] = Time.now.utc
+        elsif message.has_key? 'change'
+          message[message['change']]['time'] = Time.now.utc
         end
         @messages.push message
         @messages = @messages[-100..-1] if @messages.size > 100
@@ -130,6 +151,10 @@ module JsChat
           u.connection.send_response(message)
         end
       end
+    end
+
+    def change_notice(user, response)
+      notice(user, response)
     end
 
     def join_notice(user)
@@ -272,6 +297,17 @@ module JsChat
       end
       ServerConfig[:logger].send level, message
     end
+  end
+
+  def change(change, options = {})
+    if change == 'user'
+      field, value = @user.send :change, options[change]
+      { 'display' => 'notice', 'notice' => "Your #{field} has been changed to: #{value}" }
+    else
+      Error.new("Invalid change request")
+    end
+  rescue JsChat::Errors::InvalidName => exception
+    exception
   end
 
   def send_response(data)

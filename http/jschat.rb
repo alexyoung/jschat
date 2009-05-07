@@ -73,8 +73,11 @@ module JsChat
       def save_messages(messages)
         @messages ||= {}
         room = find_room(messages)
-        @messages[room] ||= []
-        @messages[room] << sanitize_json(messages).to_json
+        room = last_room if room.nil?
+        if room
+          @messages[room] ||= []
+          @messages[room] << sanitize_json(messages).to_json
+        end
       end
 
       # This searches messages for a room name reference
@@ -192,6 +195,10 @@ module JsChat
 
     def identified?
       @connection.identified?
+    end
+
+    def change(change_type, data)
+      @connection.send_data({ 'change' => change_type, change_type => data }.to_json + "\n")
     end
 
     def run
@@ -315,6 +322,11 @@ post '/identify' do
   @bridge.server.identify params['name']
   @bridge.server.connection.last_room = params['room']
   redirect '/identify-pending'
+end
+
+post '/change-name' do
+  load_bridge
+  @bridge.server.change 'user', { 'name' => params['name'] }
 end
 
 # Invalid nick names should be handled using Ajax
