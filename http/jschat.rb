@@ -378,7 +378,7 @@ end
 get '/chat/' do
   load_bridge
 
-  if @bridge.server.identified?
+  if @bridge and @bridge.server and @bridge.server.identified?
     erb message_form
   else
     redirect '/'
