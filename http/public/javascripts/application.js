@@ -129,6 +129,8 @@ var Display = {
     }.bind(this));
     this.ignore_notices = false;
     this.scrollMessagesToTop();
+    /* This is assumed to be the point at which displaying /lastlog completes */
+    $('loading').hide();
   },
 
   scrollMessagesToTop: function() {
@@ -415,10 +417,8 @@ function initDisplay() {
       new Ajax.Request('/lastlog', {
         method: 'get',
         parameters: { time: new Date().getTime(), room: currentRoom() },
-        onFailure: function() { Display.add_message("Error: Couldn't join channel", 'server'); },
-        onComplete: function() {
-          setTimeout(function() { JsChatRequest.get('/names'); }, 250);
-        }
+        onFailure: function() { Display.add_message("Error: Couldn't join channel", 'server'); $('loading').hide(); },
+        onComplete: function() { setTimeout(function() { JsChatRequest.get('/names'); }, 250); }
       });
     }
   });
@@ -441,6 +441,8 @@ function signOn(retries) {
     $('feedback').show();
   }
 
+  $('loading').show();
+  
   new Ajax.Request('/identify', {
     parameters: $('sign-on').serialize(true),
     onSuccess: function(transport) {
@@ -461,6 +463,9 @@ function signOn(retries) {
     },
     onFailure: function() {
       showError('Connection error');
+    },
+    onComplete: function() {
+      $('loading').hide();
     }
   });
 }
@@ -471,6 +476,7 @@ document.observe('dom:loaded', function() {
   }
 
   if ($('post_message')) {
+    $('loading').show();
     adaptSizes();
     Event.observe(window, 'resize', adaptSizes);
     setTimeout(initDisplay, 1000);

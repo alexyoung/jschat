@@ -56,3 +56,4 @@ ul#names li { margin: 0; padding: 0.25em 0; }
 .content h2 { margin-top: 20px }
 
 #feedback .error { padding: 10px; border: 2px solid #990000; background-color: #fff; margin: 10px 0 }
+#loading { background-color: #990000; color: #fff; font-weight: bold; padding: 3px; margin: 0 auto; position: absolute; z-index: 1020; top: 0; right: 10px; border-top: none }
