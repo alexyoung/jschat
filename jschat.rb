@@ -242,7 +242,7 @@ module JsChat
   def names(room_name, options = {})
     room = Room.find(room_name)
     if room
-      { 'display' => 'names', 'names' => room.users.collect { |user| user.name } }
+      { 'display' => 'names', 'names' => room.users.collect { |user| user.name }, 'room' => room.name }
     else
       Error.new('No such room')
     end

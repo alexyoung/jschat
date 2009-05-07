@@ -71,12 +71,16 @@ var Display = {
   },
 
   messages: function(messages) {
+    $('messages').innerHTML = '';
+    this.ignore_notices = true;
     $A(messages).each(function(json) {
       try {
         this[json['display']](json[json['display']]);
       } catch (exception) {
       }
     }.bind(this));
+    this.ignore_notices = false;
+    this.scrollMessagesToTop();
   },
 
   scrollMessagesToTop: function() {
@@ -95,12 +99,20 @@ var Display = {
   },
 
   join_notice: function(join) {
-    $('names').insert({ bottom: '<li>' + TextHelper.truncateName(join['user']) + '</li>' });
+    this.add_user(join['user']);
     this.add_message(join['user'] + ' has joined the room', 'server', join['time']);
   },
 
+  add_user: function(name) {
+    if (!this.ignore_notices) {
+      $('names').insert({ bottom: '<li>' + TextHelper.truncateName(name) + '</li>' });
+    }
+  },
+
   remove_user: function(name) {
-    $$('#names li').each(function(element) { if (element.innerHTML == name) element.remove(); });
+    if (!this.ignore_notices) {
+      $$('#names li').each(function(element) { if (element.innerHTML == name) element.remove(); });
+    }
   },
 
   part_notice: function(part) {
@@ -113,6 +125,47 @@ var Display = {
     this.add_message(quit['user'] + ' has quit', 'server', quit['time']);
   }
 };
+
+var JsChatRequest = {
+  get: function(url) {
+    new Ajax.Request(url, {
+      method: 'get',
+      parameters: { time: new Date().getTime(), room: currentRoom() },
+      onFailure: function() {
+        Display.add_message("Server error: couldn't access: #{url}".interpolate({ url: url }), 'server');
+      }
+    });
+  }
+}
+
+var UserCommands = {
+  '/clear': function() {
+    $('messages').innerHTML = '';
+  },
+
+  '/lastlog': function() {
+    $('messages').innerHTML = '';
+    JsChatRequest.get('/lastlog');
+  },
+
+  '/(name|nick)\\s+(.*)': function(name) {
+    name = name[2];
+    new Ajax.Request('/identify', {
+      method: 'post',
+      parameters: { name: name, room: currentRoom() },
+      onSuccess: function() {
+        JsChatRequest.get('/names');
+      },
+      onFailure: function() {
+        Display.add_message("Server error: couldn't access: #{url}".interpolate({ url: url }), 'server');
+      }
+    });
+  },
+
+  '/names': function() {
+    JsChatRequest.get('/names');
+  }
+}
 
 function displayMessages(text) {
   var json_set = text.evalJSON(true);
@@ -288,17 +341,10 @@ function currentRoom() {
   return window.location.hash;
 }
 
-function namesRequest() {
-  new Ajax.Request('/names', {
-    method: 'get',
-    parameters: { time: new Date().getTime(), room: currentRoom() },
-    onFailure: function() { alert('Error fetching names list'); }
-  });
-}
-
 function initDisplay() {
   Display.unread = 0;
   Display.show_unread = false;
+  Display.ignore_notices = false;
   $('room-name').innerHTML = currentRoom();
   poller = new PeriodicalExecuter(updateMessages, 3);
 
@@ -311,7 +357,7 @@ function initDisplay() {
         parameters: { time: new Date().getTime(), room: currentRoom() },
         onFailure: function() { alert('Error connecting'); },
         onComplete: function() {
-          setTimeout(namesRequest, 250);
+          setTimeout(function() { JsChatRequest.get('/names'); }, 250);
         }
       });
     }
@@ -375,18 +421,26 @@ document.observe('dom:loaded', function() {
       var message = $('message').value;
       $('message').value = '';
 
-      switch (message) {
-        case '/names':
-          namesRequest();
-        break;
-
-        default:
-          new Ajax.Request('/message', {
-            method: 'post',
-            parameters: { 'message': message, 'to': currentRoom() }
-          });
-        break;
+      if (message.length == 0) {
+        return;
       }
+
+      var command_posted = $H(UserCommands).find(function(command) {
+        var name = command[0];
+        var matches = message.match(new RegExp('^' + name + '$'));
+        if (matches) {
+          command[1](matches);
+          return true;
+        }
+      });
+
+      if (!command_posted) {
+        new Ajax.Request('/message', {
+          method: 'post',
+          parameters: { 'message': message, 'to': currentRoom() }
+        });
+      }
+
       Event.stop(e);
     });
 

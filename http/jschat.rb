@@ -86,25 +86,29 @@ module JsChat
             room_name = extract_room_name(message)
             return room_name if room_name
           end
-        else
+        elsif messages.kind_of? Hash
           return extract_room_name(messages)
         end
+        return false
       end
 
       def extract_room_name(message)
-        return unless message.kind_of? Hash
-
+        room_name = nil
         message.each do |field, value|
           if field == 'room'
-            return value
+            room_name = value
+            true
           elsif field == 'to'
-            return value
+            room_name = value
+            true
           elsif value.kind_of? Hash
-            return extract_room_name value
+            room_name = extract_room_name(value)
           elsif value.kind_of? Array
-            return find_room(value)
+            room_name = find_room value
           end
+          return room_name if room_name
         end
+        nil
       end
 
       def last_room=(room)
@@ -372,6 +376,8 @@ end
 
 post '/quit' do
   load_bridge
-  @bridge.server.quit
+  if @bridge and @bridge.server
+    @bridge.server.quit
+  end
   "Quit"
 end
