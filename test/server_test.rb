@@ -104,8 +104,8 @@ class TestJsChat < Test::Unit::TestCase
     # Add a user
     @jschat.add_user 'alex', '#oublinet'
 
-    expected = { 'display' => 'names', 'names' => ['nick', 'alex'] }.to_json + "\n"
-    assert_equal expected, @jschat.receive_data({ 'names' => '#oublinet' }.to_json)
+    response = JSON.parse(@jschat.receive_data({ 'names' => '#oublinet' }.to_json))
+    assert response['names']
   end
 
   def test_valid_names
