@@ -1,6 +1,24 @@
-h2. JSON Chat
+h2. JsChat
 
-h3. Requirements
+!http://github.com/alexyoung/jschat/raw/8c11578439770962d86d6444d0c159cfb2affbcd/http/public/images/jschat.gif!
+
+JsChat is a chat system.  It has an easy to learn JSON protocol, an ncurses client, a web app, and a server.  You can try it right now on "jschat.org":http://jschat.org.
+
+JsChat is similar to IRC, but it's a fundamentally simpler system.
+
+The *web app* has lots of interesting features:
+
+* IRC-like commands: /names, /name new_name (/nick works too), /clear, /lastlog
+* It's pretty tiny; it's built with "Sinatra":http://sinatrarb.com and "Prototype":http://prototypejs.org
+* Auto-linking: pasting an image displays it inline, youtube videos will appear as well
+* Last messages are displayed on join: the last 100 messages are displayed, so you don't feel lost when you join a room
+* Tab completion!
+
+!http://dl.getdropbox.com/u/221414/blogs/jschat.png!
+
+h3. Ruby Library Requirements
+
+These gems are required by JsChat:
 
 * eventmachine
 * ncurses (for the client)
@@ -11,14 +29,38 @@ h3. Usage
 * Run the server with <em>./server.rb</em>
 * Connect a client with <em>./client.rb</em>
 
-h3. Client commands
+The web app must be run alongside the server.  The web app must be started in production mode:
+
+<code>http/chat.rb -e production</code>
+
+The web app currently has no database dependencies, it's a wrapper that links cookies to JsChat server proxies.  You can run it on port 80 by configuring Rack or an Apache proxy.  I have Apache set up this way on "jschat.org":http://jschat.org.
+
+h3. Client Commands
 
 * Change name or identify: <code>/nick name</code>
 * Join a room: <code>/join #room</code>
 * Join a room (alias): <code>/j #room</code>
 
-h3. Protocol design
+h3. Protocol Design
 
 The protocol is designed to be as close to executable JSON as possible, so clients and servers are simple to implement.
 
 Look at <em>client.rb</em> <code>JsChat::Protocol</code> to see what I mean.
+
+h3. The Future
+
+Hugely scalable nanite clusters with redundancy and ridiculous uptime, and an uplink to the Millennium Falcon.
+
+h3. Hey, this is like Campfire!
+
+I love Campfire and I didn't intend for JsChat to compete with it.  JsChat is just a fun project, it doesn't offer Campfire's business-friendly interface, file hosting, transcripts and Basecamp integration.
+
+h3. Credits
+
+JsChat was created by "Alex Young":http://alexyoung.org for "Helicoid":http://helicoid.net.  A growing group of friends are helping out:
+
+* "nickmartini":http://github.com/nickmartini
+* "gabrielg":http://github.com/gabrielg
+* Kevin Ford
+
+If you'd like to contribute, send "alexyoung":http://github.com/alexyoung a message on GitHub.
