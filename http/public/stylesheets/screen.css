@@ -12,6 +12,8 @@ h1 { text-align: left; margin-left: 20px }
 .header .navigation li { float: left; margin: 0 20px 0 0; padding: 0 }
 .header .navigation li a { text-decoration: none; color: #fff; background-color: #777; padding: 1px 3px }
 .header .navigation li a:hover { background-color: #fff; color: #555 }
+.header .navigation li#quit-link a { background-color: #990000  }
+.header .navigation li#quit-link a:hover { color: #990000; background-color: #fff }
 .header-shadow { width: 100%; height: 6px; position: absolute; top: 59px; left: 0; background-image: url('/images/shadow.png'); background-repeat: repeat-x }
 
 .page { margin-top: 60px }

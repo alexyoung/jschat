@@ -355,7 +355,7 @@ function initDisplay() {
       new Ajax.Request('/lastlog', {
         method: 'get',
         parameters: { time: new Date().getTime(), room: currentRoom() },
-        onFailure: function() { alert('Error connecting'); },
+        onFailure: function() { Display.add_message("Error: Couldn't join channel", 'server'); },
         onComplete: function() {
           setTimeout(function() { JsChatRequest.get('/names'); }, 250);
         }
@@ -444,9 +444,8 @@ document.observe('dom:loaded', function() {
       Event.stop(e);
     });
 
-    Event.observe(window, 'unload', function() {
-      new Ajax.Request('/quit');
-    });
+    $$('.header .navigation li').invoke('hide');
+    $('quit-link').show();
   }
 
   if ($('sign-on')) {

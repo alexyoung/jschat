@@ -300,8 +300,14 @@ end
 
 # Identify
 get '/' do
-  response.set_cookie 'jschat-id', ''
-  erb :index
+  load_bridge
+
+  if @bridge and @bridge.server and @bridge.server.connection.last_room
+    redirect "/chat/#{@bridge.server.connection.last_room}" 
+  else
+    response.set_cookie 'jschat-id', ''
+    erb :index
+  end
 end
 
 post '/identify' do
@@ -374,10 +380,10 @@ post '/message' do
   "Message posted"
 end
 
-post '/quit' do
+get '/quit' do
   load_bridge
   if @bridge and @bridge.server
     @bridge.server.quit
   end
-  "Quit"
+  redirect '/'
 end
