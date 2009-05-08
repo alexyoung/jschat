@@ -47,7 +47,7 @@ Look at <em>client.rb</em> <code>JsChat::Protocol</code> to see what I mean.
 
 h3. The Future
 
-Hugely scalable nanite clusters with redundancy and ridiculous uptime, and an uplink to the Millennium Falcon.
+Hugely scalable nanite clusters with redundancy and ridiculous uptime, and an uplink to the Millennium Falcon. Skynet will launch its tactical nukes and humanity will be all but wiped out. Woops...
 
 h3. Hey, this is like Campfire!
 
