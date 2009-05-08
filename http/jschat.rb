@@ -148,7 +148,19 @@ module JsChat
             @identification_error = json
           elsif @identified
             save_messages json
+            update_name_on_name_change json
           end
+        end
+      end
+
+      def changing_my_name?(json)
+        json['change'] and json['user'] and json['user']['name'] and json['user']['name'].keys.first == @name
+      end
+
+      def update_name_on_name_change(json)
+        return if json.nil? or json.empty?
+        if changing_my_name? json
+          @name = json['user']['name'].values.first 
         end
       end
 
@@ -374,6 +386,11 @@ post '/message' do
   @bridge.server.connection.last_room = params['to']
   @bridge.server.send_message params['message'], params['to']
   "Message posted"
+end
+
+get '/user/name' do
+  load_bridge
+  @bridge.server.connection.name
 end
 
 get '/quit' do
