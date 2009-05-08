@@ -143,18 +143,18 @@ module JsChat
       { 'name' => @name, 'members' => member_names }.to_json
     end
 
-    def notice(user, message)
+    def notice(user, message, all = false)
       add_to_lastlog message
 
       @users.each do |u|
-        if u != user
+        if (u != user and !all) or all
           u.connection.send_response(message)
         end
       end
     end
 
     def change_notice(user, response)
-      notice(user, response)
+      notice(user, response, true)
     end
 
     def join_notice(user)

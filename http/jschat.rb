@@ -143,7 +143,7 @@ module JsChat
 
           if @identified == false and json['identified']
             @identified = true
-            @name = json['name']
+            @name = json['identified']['name']
           elsif @identified == false and json['display'] == 'error'
             @identification_error = json
           elsif @identified
@@ -151,6 +151,8 @@ module JsChat
           end
         end
       end
+
+      def name ; @name ; end
 
       def names(room)
         send_data({'names' => room}.to_json + "\n")
@@ -263,24 +265,6 @@ helpers do
   include Rack::Utils
   alias_method :h, :escape_html
 
-  def message_form
-    html = <<-HTML
-      <ul id="messages">
-      </ul>
-      <div id="info">
-        <h2 id="room-name">Loading...</h2>
-        <ul id="names"> 
-        </ul>
-      </div>
-      <div id="input">
-        <form method="post" action="/message" id="post_message">
-          <input name="message" id="message" value="" type="text" autocomplete="off" />
-          <input name="submit" type="submit" id="send_button" value="Send" />
-        </form>
-      </div>
-    HTML
-  end
-
   def load_bridge
     cookie = request.cookies['jschat-id']
     JsChat::Bridge.find_server cookie
@@ -379,7 +363,7 @@ get '/chat/' do
   load_bridge
 
   if @bridge and @bridge.server and @bridge.server.identified?
-    erb message_form
+    erb :message_form
   else
     erb :index
   end
