@@ -92,6 +92,10 @@ var Change = {
       var old = change[0],
           new_value = change[1];
       Display.add_message("#{old} is now known as #{new_value}".interpolate({ old: old, new_value: new_value }), 'server', user['time']);
+
+      if (old == $('name').innerHTML) {
+        $('name').innerHTML = new_value;
+      }
     }
   }
 };
@@ -104,8 +108,15 @@ var Display = {
   },
 
   message: function(message) {
-    var text = '<span class="user">\#{user}</span> <span class="message">\#{message}</span>';
-    text = text.interpolate({ room: message['room'], user: TextHelper.truncateName(message['user']), message: TextHelper.decorateMessage(message['message']) });
+    var name = $('name').innerHTML;
+    var user_class = name == message['user'] ? 'user active' : 'user';
+    var text = '<span class="\#{user_class}">\#{user}</span> <span class="\#{message_class}">\#{message}</span>';
+
+    if (message['message'].match(new RegExp(name, 'i')) && name != message['user']) {
+      user_class = 'user mentioned';
+    }
+
+    text = text.interpolate({ user_class: user_class, room: message['room'], user: TextHelper.truncateName(message['user']), message: TextHelper.decorateMessage(message['message']), message_class: 'message' });
     this.add_message(text, 'message', message['time']);
 
     if (this.show_unread) {
@@ -249,6 +260,10 @@ function updateMessages() {
     onSuccess: function(transport) {
       try {
         displayMessages(transport.responseText);
+
+        if ($$('#messages li').length > 1000) {
+          $$('#messages li').slice(0, 500).invoke('remove');
+        }
       } catch (exception) {
         console.log(transport.responseText);
         console.log(exception);
