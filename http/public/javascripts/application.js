@@ -451,14 +451,18 @@ function signOn(retries) {
         if (json['action'] == 'reload' && retries < 4) {
           setTimeout(function() { signOn(retries + 1) }, 500);
         } else if (json['action'] == 'redirect') {
-          window.location = json['to'];
+          if (window.location.toString().match(new RegExp(json['to'] + '$'))) {
+            window.location.reload();
+          } else {
+            window.location = json['to'];
+          }
         } else if (json['error']) {
           showError(json['error']['message']);
         } else {
           showError('Connection error');
         }
       } catch (exception) {
-        showError('Connection error: #{error}'.interpolate({ exception: exception }));
+        showError('Connection error: #{error}'.interpolate({ error: exception }));
       }
     },
     onFailure: function() {

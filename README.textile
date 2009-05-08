@@ -1,5 +1,3 @@
-h2. JsChat
-
 !http://github.com/alexyoung/jschat/raw/8c11578439770962d86d6444d0c159cfb2affbcd/http/public/images/jschat.gif!
 
 JsChat is a chat system.  It has an easy to learn JSON protocol, an ncurses client, a web app, and a server.  You can try it right now on "jschat.org":http://jschat.org.

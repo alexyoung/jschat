@@ -381,7 +381,7 @@ get '/chat/' do
   if @bridge and @bridge.server and @bridge.server.identified?
     erb message_form
   else
-    redirect '/'
+    erb :index
   end
 end
 
