@@ -68,7 +68,7 @@ var TextHelper = {
       var result = '';
       var m = escape_regex(mapping[0]);
       var mr = new RegExp('(' + m + ')');
-      var matcher = new RegExp('(\\s+)(' + m + ')([^\\s][^' + mapping[0] + ']*[^\\s])(' + m + ')', 'g');
+      var matcher = new RegExp('(^|\\s+)(' + m + ')([^\\s][^' + mapping[0] + ']*[^\\s])(' + m + ')', 'g');
 
       if (text.match(matcher)) {
         var open = false;
