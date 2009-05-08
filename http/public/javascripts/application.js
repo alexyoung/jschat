@@ -302,7 +302,7 @@ var TabCompletion = Class.create({
 
   tabSearch: function(input) {
     var names = $$('#names li').collect(function(element) { return element.innerHTML });
-    return names.findAll(function(name) { return name.match(input) });
+    return names.findAll(function(name) { return name.toLowerCase().match(input.toLowerCase()) });
   },
 
   textToLeft: function() {
@@ -326,7 +326,7 @@ var TabCompletion = Class.create({
             var search_text = '';
             var search_result = '';
             var replace_inline = false;
-            var editedText = this.element.value.match(/[^a-zA-Z0-9]/);
+            var editedText = this.element.value.match(/[^a-z0-9]/i);
 
             if (this.cycling) {
               if (this.element.value == '#{last_result}: '.interpolate({ last_result: this.last_result })) {
@@ -340,7 +340,7 @@ var TabCompletion = Class.create({
               replace_inline = true;
             } else {
               search_text = this.element.value;
-            }
+	    }
 
             if (this.matches.length == 0) {
               this.matches = this.tabSearch(search_text);
