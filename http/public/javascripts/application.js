@@ -1,3 +1,31 @@
+Cookie = {
+  create: function(name, value, days, path) {
+    var expires = '';
+    path = typeof path == 'undefined' ? '/' : path;
+    
+    if (days) {
+      var date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      expires = "; expires=" + date.toGMTString();
+    }
+ 
+    if (name && value) {
+      document.cookie = name + '=' + escape(value) + expires + ';path=' + path;
+    }
+  },
+  
+  find: function(name) {
+    var matches = document.cookie.match(name + '=([^;]*)');
+    if (matches && matches.length == 2) {
+      return unescape(matches[1]);
+    }
+  },
+  
+  destroy: function(name) {
+    this.create(name, ' ', -1);
+  }
+};
+
 var LinkHelper = {
   url: function(url) {
     return url.match(/(https?:\/\/[^\s]*)/gi);
@@ -174,6 +202,7 @@ var Display = {
     this.scrollMessagesToTop();
     /* This is assumed to be the point at which displaying /lastlog completes */
     $('loading').hide();
+    Cookie.create('jschat-name', $('name').innerHTML, 28, '/');
   },
 
   scrollMessagesToTop: function() {
@@ -304,7 +333,7 @@ function updateMessages() {
     },
     onFailure: function(request) {
       poller.stop();
-      Display.add_message('Server error: <a href="/">please reconnect</a>', 'server');
+      Display.add_message('Server error: <a href="/#{room}">please reconnect</a>'.interpolate({ room: currentRoom() }), 'server');
     }
   });
 }
@@ -315,6 +344,7 @@ function updateName() {
     parameters: { time: new Date().getTime() },
     onSuccess: function(transport) {
       $('name').innerHTML = transport.responseText;
+      Cookie.create('jschat-name', $('name').innerHTML, 28, '/');
     }
   });
 }
@@ -533,11 +563,7 @@ function signOn(retries) {
 }
 
 document.observe('dom:loaded', function() {
-  if ($('room') && window.location.hash) {
-    $('room').value = window.location.hash;
-  }
-
-  if ($('post_message')) {
+ if ($('post_message')) {
     $('loading').show();
     adaptSizes();
     Event.observe(window, 'resize', adaptSizes);
@@ -577,6 +603,14 @@ document.observe('dom:loaded', function() {
   }
 
   if ($('sign-on')) {
+    if (Cookie.find('jschat-name')) {
+      $('name').value = Cookie.find('jschat-name');
+    }
+
+    if ($('room') && window.location.hash) {
+      $('room').value = window.location.hash;
+    }
+ 
     setTimeout(function() { $('name').activate() }, 500);
 
     /* The form uses Ajax to sign on */
