@@ -381,11 +381,22 @@ var TabCompletion = Class.create({
     this.matches = [];
     this.match_offset = 0;
     this.cycling = false;
+    this.has_focus = true;
 
     document.observe('keydown', this.keyboardEvents.bindAsEventListener(this));
-    this.element.observe('focus', this.reset.bindAsEventListener(this));
-    this.element.observe('blur', this.reset.bindAsEventListener(this));
-    this.element.observe('click', this.reset.bindAsEventListener(this));
+    this.element.observe('focus', this.onFocus.bindAsEventListener(this));
+    this.element.observe('blur', this.onBlur.bindAsEventListener(this));
+    this.element.observe('click', this.onFocus.bindAsEventListener(this));
+  },
+
+  onBlur: function() {
+    this.has_focus = false;
+    this.reset();
+  },
+
+  onFocus: function() {
+    this.has_focus = true;
+    this.reset();
   },
 
   tabSearch: function(input) {
@@ -404,8 +415,16 @@ var TabCompletion = Class.create({
     return text;
   },
 
+  elementFocused: function(e) {
+    if (typeof document.activeElement == 'undefined') {
+      return this.has_focus;
+    } else {
+      return document.activeElement == this.element;
+    }
+  },
+
   keyboardEvents: function(e) {
-    if (document.activeElement == this.element) {
+    if (this.elementFocused()) {
       switch (e.keyCode) {
         case Event.KEY_TAB:
           var caret_position = getCaretPosition(this.element);
