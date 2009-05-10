@@ -347,7 +347,8 @@ module JsChat
               message_result = send('send_message', input[command], input)
               response << message_result if message_result.kind_of? String
             else
-              response << send_response(send(command, input[command], input))
+              result = send_response(send(command, input[command], input))
+              response << result if result.kind_of? String
             end
           end
         end
