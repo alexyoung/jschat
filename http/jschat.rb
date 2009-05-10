@@ -3,6 +3,7 @@ require 'sinatra'
 require 'sha1'
 require 'eventmachine'
 require 'json'
+require 'sprockets'
 
 set :public, Proc.new { File.join(root, 'public') }
 set :views, Proc.new { File.join(root, 'views') }
@@ -400,3 +401,19 @@ get '/quit' do
   end
   redirect '/'
 end
+
+# This serves the JavaScript concat'd by Sprockets
+# run script/sprocket.rb to cache this
+get '/javascripts/all.js' do
+  sprockets_root = File.dirname(__FILE__)
+  sprockets_config = YAML.load(IO.read(File.join(sprockets_root, 'config', 'sprockets.yml')))
+  secretary = Sprockets::Secretary.new(
+    :root         => sprockets_root, 
+    :load_path    => sprockets_config[:load_path],
+    :source_files => sprockets_config[:source_files]
+  )
+
+  content_type 'text/javascript'
+  secretary.concatenation.to_s
+end
+

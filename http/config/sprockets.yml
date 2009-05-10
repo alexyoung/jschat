@@ -1,0 +1,5 @@
+:load_path:
+  - javascripts/app
+:source_files:
+  - **/*.js
+:output_file: public/javascripts/all.js
