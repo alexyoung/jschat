@@ -59,6 +59,30 @@ var LinkHelper = {
   }
 };
 
+var EmoteHelper = {
+  legalEmotes: ['angry', 'arr', 'blink', 'blush', 'brucelee', 'btw', 'chuckle', 'clap', 'cool', 'drool', 'drunk', 'dry', 'eek', 'flex', 'happy', 'huh', 'laugh', 'lol', 'mad', 'mellow', 'noclue', 'oh', 'ohmy', 'ph34r', 'pimp', 'punch', 'realmad', 'rock', 'rofl', 'rolleyes', 'sad', 'scratch', 'shifty', 'shock', 'shrug', 'sleep', 'sleeping', 'smile', 'suicide', 'sweat', 'thumbs', 'tongue', 'unsure', 'w00t', 'wacko', 'whistling', 'wink', 'worship', 'yucky'],
+
+  emoteToImage: function(emote) {
+    var result = emote;
+    emote = emote.replace(/^:/, '');
+    if (EmoteHelper.legalEmotes.find(function(v) { return v == emote })) {
+      result = '<img src="/images/emoticons/#{emote}.gif" alt="#{description}" />'.interpolate({ emote: emote, description: emote });
+    }
+    return result;
+  },
+
+  insertEmotes: function(text) {
+    var result = '';
+    $A(text.split(/(:[^ ]*)/)).each(function(segment) {
+      if (segment.match(/^:/)) {
+        segment = EmoteHelper.emoteToImage(segment);
+      }
+      result += segment;
+    });
+    return result;
+  }
+}
+
 var TextHelper = {
   zeroPad: function(value, length) {
     value = value.toString();
@@ -82,7 +106,7 @@ var TextHelper = {
   },
 
   decorateMessage: function(text) {
-    return this.autoLink(this.textilize(text));
+    return EmoteHelper.insertEmotes(this.autoLink(this.textilize(text)));
   },
 
   textilize: function(text) {
@@ -144,7 +168,7 @@ var TextHelper = {
     }
     return result;
   }
-}
+};
 
 var Change = {
   user: function(user) {
@@ -267,7 +291,7 @@ var JsChatRequest = {
       onComplete: callback
     });
   }
-}
+};
 
 var UserCommands = {
   '/clear': function() {
@@ -296,7 +320,7 @@ var UserCommands = {
   '/names': function() {
     JsChatRequest.get('/names');
   }
-}
+};
 
 function displayMessages(text) {
   var json_set = text.evalJSON(true);
