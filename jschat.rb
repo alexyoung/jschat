@@ -179,8 +179,8 @@ module JsChat
   end
 
   module Errors
-    class InvalidName < JsChat::Error
-    end
+    class InvalidName < JsChat::Error ; end
+    class MessageTooLong < JsChat::Error ; end
   end
 
   # User initially has a nil name
@@ -291,7 +291,7 @@ module JsChat
   end
 
   def log(level, message)
-    if Object.const_defined? :ServerConfig
+    if Object.const_defined? :ServerConfig and ServerConfig[:logger]
       if @user
         message = "#{@user.name}: #{message}"
       end
@@ -329,6 +329,11 @@ module JsChat
 
   def receive_data(data)
     response = ''
+
+    if data and data.size > ServerConfig[:max_message_length]
+      raise JsChat::Errors::MessageTooLong.new('Message too long')
+    end
+
     data.strip.split("\n").each do |line|
       # Receive the identify request
       input = JSON.parse line 
@@ -356,6 +361,8 @@ module JsChat
     end
 
     response
+  rescue JsChat::Errors::MessageTooLong => exception
+    send_response exception
   rescue Exception => exception
     puts "Data that raised exception: #{exception}"
     p data

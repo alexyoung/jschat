@@ -9,7 +9,8 @@ logger = Logger.new(STDOUT)
 ServerConfig = {
   :port => 6789,
   :ip => '0.0.0.0',
-  :logger => logger
+  :logger => logger,
+  :max_message_length => 500
 }
 
 EM.run do

@@ -4,6 +4,10 @@ require 'eventmachine'
 require 'json'
 require File.join(File.dirname(__FILE__), '../', 'jschat.rb')
 
+ServerConfig = {
+  :max_message_length => 500
+}
+
 class JsChat::Room
   def self.reset
     @@rooms = nil
@@ -55,26 +59,26 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_ensure_nicks_are_unique
-    @jschat.receive_data({ 'identify' => 'alex' }.to_json)
+    identify_as 'alex'
 
     # Obvious duplicate
-    result = JSON.parse @jschat.receive_data({ 'identify' => 'alex' }.to_json)
+    result = identify_as 'alex'
     assert result['error']
 
     # Case
-    result = JSON.parse @jschat.receive_data({ 'identify' => 'Alex' }.to_json)
+    result = identify_as 'Alex'
     assert result['error']
   end
 
   def test_invalid_room_name
-    @jschat.receive_data({ 'identify' => 'bob' }.to_json)
+    identify_as 'bob'
     response = JSON.parse @jschat.receive_data({ 'join' => 'oublinet' }.to_json)
     assert_equal 'Invalid room name', response['error']['message']
   end
 
   def test_join
+    identify_as 'bob'
     expected = { 'display' => 'join', 'join' => { 'user' => 'bob', 'room' => '#oublinet' } }.to_json + "\n"
-    @jschat.receive_data({ 'identify' => 'bob' }.to_json)
     assert_equal expected, @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
   end
 
@@ -84,7 +88,7 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_join_more_than_once
-    @jschat.receive_data({ 'identify' => 'bob' }.to_json)
+    identify_as 'bob'
 
     expected = { 'display' => 'error', 'error' => { 'message' => 'Already in that room' } }.to_json + "\n"
     @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
@@ -92,14 +96,13 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_identify_twice
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    identify_as 'nick'
     expected = { 'display' => 'error', 'error' => { 'message' => 'Name already taken' } }.to_json + "\n"
     assert_equal expected, @jschat.receive_data({ 'identify' => 'nick' }.to_json)
   end
 
   def test_names
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    identify_as 'nick', '#oublinet'
 
     # Add a user
     @jschat.add_user 'alex', '#oublinet'
@@ -118,72 +121,79 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_message_not_in_room
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    identify_as 'nick', '#oublinet'
     @jschat.add_user 'alex', '#oublinet'
     response = JSON.parse @jschat.receive_data({ 'send' => 'hello', 'to' => '#merk' }.to_json)
     assert_equal 'Please join this room first', response['error']['message']
   end
 
   def test_message
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    identify_as 'nick', '#oublinet'
     @jschat.add_user 'alex', '#oublinet'
     assert @jschat.receive_data({ 'send' => 'hello', 'to' => '#oublinet' }.to_json)
   end
 
   def test_message_ignores_case
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    identify_as 'nick', '#oublinet'
     @jschat.add_user 'alex', '#oublinet'
     response = @jschat.receive_data({ 'send' => 'hello', 'to' => '#Oublinet' }.to_json)
     assert response
   end
 
   def test_part
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    identify_as 'nick', '#oublinet'
     @jschat.add_user 'alex', '#oublinet'
     response = JSON.parse @jschat.receive_data({ 'part' => '#oublinet'}.to_json)
     assert_equal '#oublinet', response['part']['room']
   end
 
   def test_private_message
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    identify_as 'nick'
     @jschat.add_user 'alex', '#oublinet'
     response = JSON.parse @jschat.receive_data({ 'send' => 'hello', 'to' => 'alex' }.to_json)
     assert_equal 'hello', response['message']['message']
   end
 
   def test_private_message_ignores_case
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    identify_as 'nick'
     @jschat.add_user 'alex', '#oublinet'
     response = JSON.parse @jschat.receive_data({ 'send' => 'hello', 'to' => 'Alex' }.to_json)
     assert_equal 'hello', response['message']['message']
   end
 
   def test_log_request
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    identify_as 'nick', '#oublinet'
     @jschat.receive_data({ 'send' => 'hello', 'to' => '#oublinet' }.to_json)
     response = JSON.parse @jschat.receive_data({ 'lastlog' => '#oublinet' }.to_json)
     assert_equal 'hello', response['messages'].last['message']['message']
   end
 
   def test_name_change
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    identify_as 'nick', '#oublinet'
     @jschat.add_user 'alex', '#oublinet'
     response = JSON.parse @jschat.receive_data({ 'change' => 'user', 'user' => { 'name' => 'bob' }}.to_json)
     assert_equal 'notice', response['display']
   end
 
   def test_name_change_duplicate
-    @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    identify_as 'nick', '#oublinet'
     @jschat.add_user 'alex', '#oublinet'
     response = JSON.parse @jschat.receive_data({ 'change' => 'user', 'user' => { 'name' => 'alex' }}.to_json)
     assert_equal 'error', response['display']
   end
+
+  def test_max_message_length
+    identify_as 'nick', '#oublinet'
+    response = JSON.parse @jschat.receive_data({ 'send' => 'a' * 1000, 'to' => '#oublinet' }.to_json)
+    assert response['error']
+  end
+
+  private
+
+    def identify_as(name, channel = nil)
+      result = @jschat.receive_data({ 'identify' => name }.to_json)
+      result = @jschat.receive_data({ 'join' => channel }.to_json) if channel
+      result
+    end
 end
 
