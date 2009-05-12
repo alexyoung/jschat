@@ -1,5 +1,5 @@
 /* FIXME: Later on this should be a class */
-var JsChatRequest = {
+JsChat.Request = {
   get: function(url, callback) {
     new Ajax.Request(url, {
       method: 'get',

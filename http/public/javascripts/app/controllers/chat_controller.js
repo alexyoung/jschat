@@ -103,7 +103,7 @@ JsChat.ChatController = Class.create({
   },
 
   updateNames: function() {
-    JsChatRequest.get('/names');
+    JsChat.Request.get('/names');
   },
 
   updateMessages: function() {

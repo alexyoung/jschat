@@ -61,8 +61,8 @@ module JsChat
     end
     
     def names(json)
-      @connection.names = json
-      "* In this channel: #{json.join(', ')}"
+      @connection.names = json.collect { |u| u['name'] }
+      "* In this channel: #{@connection.names.join(', ')}"
     end
 
     def identified(json)
@@ -204,34 +204,71 @@ module JsClient
       [rows.first, cols.first]
     end
 
-    def receive_data(data)
-      @clipboard ||= ''
+    def get_history_text(offset = 1)
+      offset_position = @history_position + offset
+      if offset_position >= 0 and offset_position < @history.size
+        @history_position = offset_position
+        @history[@history_position]
+      else
+        if @history_position > -1 and @history_position < @history.size
+          @history_position = offset_position
+        end
+        ''
+      end
+    end
+
+    def arrow_keys(data)
       c = data[0]
-      
       if @sequence
         @sequence << c
+        history_text = ''
 
         if data == 'A'
           @sequence = nil
-          @history_position -= 1 if @history_position > 0
+          history_text = get_history_text(-1)
         elsif data == 'B'
           @sequence = nil
-          @history_position += 1 if @history_position < @history.size
+          history_text = get_history_text
+        elsif data == 'O'
+          return true
+        elsif data == 'D'
+          # left
+          @sequence = nil
+          @input_form.form_driver Ncurses::Form::REQ_PREV_CHAR
+          @windows[:input].refresh
+          return true
+        elsif data == 'C'
+          # right
+          @input_form.form_driver Ncurses::Form::REQ_NEXT_CHAR
+          @windows[:input].refresh
+          @sequence = nil
+          return true
+        else
+          @sequence = nil
+          return true
         end
 
         begin
           @input_form.form_driver Ncurses::Form::REQ_CLR_FIELD
-          text = @history[@history_position]
-          @input_field.set_field_buffer(0, text)
-          @windows[:input].addstr text
+          @input_field.set_field_buffer(0, history_text)
+          @windows[:input].addstr history_text
           @windows[:input].refresh
           @input_form.form_driver Ncurses::Form::REQ_END_LINE
         rescue Exception => exception
         end
 
-        return
+        return true
       elsif c == 27
         @sequence = c
+        return true
+      end
+    end
+
+    def receive_data(data)
+      @clipboard ||= ''
+      c = data[0]
+
+      if arrow_keys data
         return
       end
 
@@ -241,7 +278,7 @@ module JsClient
         when Ncurses::KEY_ENTER, ?\n, ?\r
           @input_form.form_driver Ncurses::Form::REQ_BEG_LINE
           line = @input_field.field_buffer(0)
-          line.strip!
+          line.rstrip!
 
           if !line.empty? and line.length > 0
             @history << line.dup
@@ -253,7 +290,7 @@ module JsClient
           # Refresh
           resize
         when Ncurses::KEY_BACKSPACE, ?\C-h, 127
-          # Backspa
+          # Backspace
           @input_form.form_driver Ncurses::Form::REQ_DEL_PREV
           @input_form.form_driver Ncurses::Form::REQ_CLR_EOL
         when ?\C-d

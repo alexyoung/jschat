@@ -335,7 +335,7 @@ module JsChat
       raise JsChat::Errors::MessageTooLong.new('Message too long')
     end
 
-    data.strip.split("\n").each do |line|
+    data.chomp.split("\n").each do |line|
       # Receive the identify request
       input = JSON.parse line 
 

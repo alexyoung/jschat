@@ -5,7 +5,7 @@ var UserCommands = {
 
   '/lastlog': function() {
     $('messages').innerHTML = '';
-    JsChatRequest.get('/lastlog');
+    JsChat.Request.get('/lastlog');
   },
 
   '/(name|nick)\\s+(.*)': function(name) {
@@ -14,7 +14,7 @@ var UserCommands = {
       method: 'post',
       parameters: { name: name },
       onSuccess: function() {
-        JsChatRequest.get('/names', this.updateName.bindAsEventListener(this));
+        JsChat.Request.get('/names', this.updateName.bindAsEventListener(this));
       }.bind(this),
       onFailure: function() {
         Display.add_message("Server error: couldn't access: #{url}".interpolate({ url: url }), 'server');
@@ -23,6 +23,6 @@ var UserCommands = {
   },
 
   '/names': function() {
-    JsChatRequest.get('/names');
+    JsChat.Request.get('/names');
   }
 };
