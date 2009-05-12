@@ -64,7 +64,7 @@ var Display = {
     try {
       var d = typeof dateValue == 'string' ? new Date(Date.parse(dateValue)) : dateValue,
           now = new Date();
-      if (((now - d) / 1000) > (5 * 60)) {
+      if (((now - d) / 1000) > (60 * 5)) {
         return true;
       }
     } catch (exception) {
@@ -77,8 +77,12 @@ var Display = {
     $('names').innerHTML = '';
     users.each(function(user) {
       var name = user['name'],
-          list_class = this.isIdle(user['last_activity']) ? 'idle' : '';
-      var element = $('names').insert({ bottom: '<li class="#{class_name}">#{name}</li>'.interpolate({ class_name: list_class, name: TextHelper.truncateName(name) }) });
+          list_class = this.isIdle(user['last_activity']) ? 'idle' : '',
+          element = $(document.createElement('li'));
+
+      element.addClassName(list_class);
+      element.innerHTML = TextHelper.truncateName(name);
+      $('names').insert({ bottom: element });
 
       try {
         // Record the last idle time so the idle state can be dynamically updated

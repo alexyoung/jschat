@@ -16,11 +16,6 @@ document.observe('dom:loaded', function() {
  
     setTimeout(function() { $('name').activate() }, 500);
 
-    /* The form uses Ajax to sign on */
-    $('sign-on').observe('submit', function(e) {
-      var signOnController = new JsChat.SignOnController();
-      Event.stop(e);
-      return false;
-    });
+    var signOnController = new JsChat.SignOnController();
   }
 });

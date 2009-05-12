@@ -32,29 +32,27 @@ JsChat.ChatController = Class.create({
   },
 
   postMessageFormEvent: function(e) {
-    var element = Event.element(e);
-    var message = $('message').value;
-    $('message').value = '';
-
-    if (message.length == 0) {
-      return;
-    }
-
     try {
-      var command_posted = $H(UserCommands).find(function(command) {
-        var name = command[0];
-        var matches = message.match(new RegExp('^' + name + '$'));
-        if (matches) {
-          command[1].bind(this)(matches);
-          return true;
-        }
-      }.bind(this));
+      var element = Event.element(e);
+      var message = $('message').value;
+      $('message').value = '';
 
-      if (!command_posted) {
-        new Ajax.Request('/message', {
-          method: 'post',
-          parameters: { 'message': message, 'to': PageHelper.currentRoom() }
-        });
+      if (message.length > 0) {
+        var command_posted = $H(UserCommands).find(function(command) {
+          var name = command[0];
+          var matches = message.match(new RegExp('^' + name + '$'));
+          if (matches) {
+            command[1].bind(this)(matches);
+            return true;
+          }
+        }.bind(this));
+
+        if (!command_posted) {
+          new Ajax.Request('/message', {
+            method: 'post',
+            parameters: { 'message': message, 'to': PageHelper.currentRoom() }
+          });
+        }
       }
     } catch (exception) {
       console.log(exception);
