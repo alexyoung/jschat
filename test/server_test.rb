@@ -49,8 +49,8 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_identify
-    expected = { 'display' => 'identified', 'identified' => { 'name' => 'alex' } }.to_json + "\n"
-    assert_equal expected, @jschat.receive_data({ 'identify' => 'alex' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'identify' => 'alex' }.to_json)
+    assert_equal 'identified', response['display']
   end
 
   def test_invalid_identify
