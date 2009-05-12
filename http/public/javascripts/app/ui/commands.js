@@ -14,8 +14,8 @@ var UserCommands = {
       method: 'post',
       parameters: { name: name },
       onSuccess: function() {
-        JsChatRequest.get('/names', updateName);
-      },
+        JsChatRequest.get('/names', this.updateName.bindAsEventListener(this));
+      }.bind(this),
       onFailure: function() {
         Display.add_message("Server error: couldn't access: #{url}".interpolate({ url: url }), 'server');
       }

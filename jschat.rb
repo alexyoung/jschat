@@ -5,16 +5,17 @@ require 'time'
 
 module JsChat
   class User
-    attr_accessor :name, :connection, :rooms
+    attr_accessor :name, :connection, :rooms, :last_activity
 
     def initialize(connection)
       @name = nil
       @connection = connection
       @rooms = []
+      @last_activity = Time.now.utc
     end
 
     def to_json
-      { 'name' => @name }.to_json
+      { 'name' => @name, 'last_activity' => @last_activity }.to_json
     end
 
     def name=(name)
@@ -267,7 +268,7 @@ module JsChat
   def names(room_name, options = {})
     room = Room.find(room_name)
     if room
-      { 'display' => 'names', 'names' => room.users.collect { |user| user.name }, 'room' => room.name }
+      { 'display' => 'names', 'names' => room.users, 'room' => room.name }
     else
       Error.new('No such room')
     end
@@ -349,6 +350,7 @@ module JsChat
 
           if input.has_key? command
             if command == 'send'
+              @user.last_activity = Time.now.utc
               message_result = send('send_message', input[command], input)
               response << message_result if message_result.kind_of? String
             else

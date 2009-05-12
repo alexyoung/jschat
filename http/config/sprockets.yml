@@ -1,5 +1,7 @@
 :load_path:
-  - javascripts/app
+  - public/javascripts
+  - public/javascripts/all
 :source_files:
-  - **/*.js
+  - public/javascripts/init.js
+  - public/javascripts/app/**/*.js
 :output_file: public/javascripts/all.js

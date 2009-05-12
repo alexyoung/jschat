@@ -29,7 +29,7 @@ var TabCompletion = Class.create({
 
   textToLeft: function() {
     var text = this.element.value;
-    var caret_position = getCaretPosition(this.element);
+    var caret_position = FormHelpers.getCaretPosition(this.element);
     if (caret_position < text.length) {
       text = text.slice(0, caret_position);
     }
@@ -50,7 +50,7 @@ var TabCompletion = Class.create({
     if (this.elementFocused()) {
       switch (e.keyCode) {
         case Event.KEY_TAB:
-          var caret_position = getCaretPosition(this.element);
+          var caret_position = FormHelpers.getCaretPosition(this.element);
 
           if (this.element.value.length > 0) {
             var search_text = '';
@@ -94,7 +94,7 @@ var TabCompletion = Class.create({
                 var slice_start = caret_position - search_text.length;
                 if (slice_start > 0) {
                   this.element.value = this.element.value.substr(0, slice_start) + search_result + this.element.value.substr(caret_position, this.element.value.length);
-                  setCaretPosition(this.element, slice_start + search_result.length);
+                  FormHelpers.setCaretPosition(this.element, slice_start + search_result.length);
                 }
               } else if (!editedText) {
                 this.element.value = '#{search_result}: '.interpolate({ search_result: search_result });

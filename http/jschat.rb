@@ -405,14 +405,9 @@ end
 # This serves the JavaScript concat'd by Sprockets
 # run script/sprocket.rb to cache this
 get '/javascripts/all.js' do
-  sprockets_root = File.dirname(__FILE__)
-  sprockets_config = YAML.load(IO.read(File.join(sprockets_root, 'config', 'sprockets.yml')))
-  secretary = Sprockets::Secretary.new(
-    :root         => sprockets_root, 
-    :load_path    => sprockets_config[:load_path],
-    :source_files => sprockets_config[:source_files]
-  )
-
+  root = File.join(File.dirname(File.expand_path(__FILE__)))
+  sprockets_config = YAML.load(IO.read(File.join(root, 'config', 'sprockets.yml')))
+  secretary = Sprockets::Secretary.new(sprockets_config.merge(:root => root))
   content_type 'text/javascript'
   secretary.concatenation.to_s
 end

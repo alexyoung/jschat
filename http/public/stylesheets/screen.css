@@ -46,6 +46,7 @@ form { margin: 0; padding: 0; }
 
 ul#names { margin: 0; padding: 0; list-style-type: none } 
 ul#names li { margin: 0; padding: 0.25em 0; } 
+ul#names li.idle { color: #777 } 
 
 .footer { border-top: 1px solid #ccc; padding: 8px 0 0 0; font-size: 80%; font-style: italic; color: #444; margin: 40px 0 0 0 }
 

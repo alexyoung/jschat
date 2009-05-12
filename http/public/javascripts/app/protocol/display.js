@@ -14,6 +14,8 @@ var Display = {
       user_class = 'user mentioned';
     }
 
+    Display.clearIdleState(message['user']);
+
     text = text.interpolate({ user_class: user_class, room: message['room'], user: TextHelper.truncateName(message['user']), message: TextHelper.decorateMessage(message['message']), message_class: 'message' });
     this.add_message(text, 'message', message['time']);
 
@@ -26,6 +28,7 @@ var Display = {
   messages: function(messages) {
     $('messages').innerHTML = '';
     this.ignore_notices = true;
+
     $A(messages).each(function(json) {
       try {
         if (json['change']) {
@@ -36,6 +39,7 @@ var Display = {
       } catch (exception) {
       }
     }.bind(this));
+
     this.ignore_notices = false;
     this.scrollMessagesToTop();
     /* This is assumed to be the point at which displaying /lastlog completes */
@@ -47,10 +51,41 @@ var Display = {
     $('messages').scrollTop = $('messages').scrollHeight;   
   },
 
-  names: function(names) {
+  clearIdleState: function(user_name) {
+    $$('#names li').each(function(element) {
+      if (element.innerHTML == user_name && element.hasClassName('idle')) {
+        element.lastIdle = (new Date());
+        element.removeClassName('idle');
+      }
+    });
+  },
+
+  isIdle: function(dateValue) {
+    try {
+      var d = typeof dateValue == 'string' ? new Date(Date.parse(dateValue)) : dateValue,
+          now = new Date();
+      if (((now - d) / 1000) > (5 * 60)) {
+        return true;
+      }
+    } catch (exception) {
+      console.log(exception);
+    }
+    return false;
+  },
+
+  names: function(users) {
     $('names').innerHTML = '';
-    names.each(function(name) {
-      $('names').insert({ bottom: '<li>' + TextHelper.truncateName(name) + '</li>' });
+    users.each(function(user) {
+      var name = user['name'],
+          list_class = this.isIdle(user['last_activity']) ? 'idle' : '';
+      var element = $('names').insert({ bottom: '<li class="#{class_name}">#{name}</li>'.interpolate({ class_name: list_class, name: TextHelper.truncateName(name) }) });
+
+      try {
+        // Record the last idle time so the idle state can be dynamically updated
+        element.lastIdle = new Date(Date.parse(user['last_activity']));
+      } catch (exception) {
+        element.lastIdle = null;
+      }
     }.bind(this));
   },
 
