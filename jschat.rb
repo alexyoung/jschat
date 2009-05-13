@@ -4,6 +4,7 @@ require 'json'
 require 'time'
 
 # JsChat libraries
+require 'lib/errors'
 require 'lib/flood_protection'
 
 module JsChat
@@ -175,20 +176,6 @@ module JsChat
       notice(user, { 'display' => 'quit_notice', 'quit_notice' => { 'user' => user.name, 'room' => @name } })
       @users.delete_if { |u| u == user }
     end
-  end
-
-  class Error < RuntimeError
-    # Note: This shouldn't really include 'display' directives
-    def to_json
-      { 'display' => 'error', 'error' => { 'message' => message } }.to_json
-    end
-  end
-
-  module Errors
-    class InvalidName < JsChat::Error ; end
-    class MessageTooLong < JsChat::Error ; end
-    class Flooding < JsChat::Error ; end
-    class StillFlooding < Exception ; end
   end
 
   # User initially has a nil name

@@ -1,4 +1,9 @@
 module JsChat
+  module Errors
+    class Flooding < JsChat::Error ; end
+    class StillFlooding < Exception ; end
+  end
+
   module FloodProtection 
     def seen!
       @activity_log ||= []
