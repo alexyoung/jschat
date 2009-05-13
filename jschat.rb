@@ -3,8 +3,13 @@ require 'eventmachine'
 require 'json'
 require 'time'
 
+# JsChat libraries
+require 'lib/flood_protection'
+
 module JsChat
   class User
+    include JsChat::FloodProtection
+
     attr_accessor :name, :connection, :rooms, :last_activity
 
     def initialize(connection)
@@ -182,6 +187,8 @@ module JsChat
   module Errors
     class InvalidName < JsChat::Error ; end
     class MessageTooLong < JsChat::Error ; end
+    class Flooding < JsChat::Error ; end
+    class StillFlooding < Exception ; end
   end
 
   # User initially has a nil name
@@ -339,6 +346,8 @@ module JsChat
       # Receive the identify request
       input = JSON.parse line 
 
+      @user.seen!
+
       if input.has_key? 'identify'
         response << send_response(identify(input['identify']))
       else
@@ -363,6 +372,10 @@ module JsChat
     end
 
     response
+  rescue JsChat::Errors::StillFlooding
+    ""
+  rescue JsChat::Errors::Flooding => exception
+    send_response exception
   rescue JsChat::Errors::MessageTooLong => exception
     send_response exception
   rescue Exception => exception

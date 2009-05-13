@@ -332,7 +332,7 @@ module JsClient
 
     def show_message(message)
       @lastlog << message.dup
-      @lastlog = @lastlog.reverse.slice(0, 25).reverse if @lastlog.size > 25
+      @lastlog.shift if @lastlog.size > 25
       display_text message
     end
 

@@ -14,8 +14,6 @@ document.observe('dom:loaded', function() {
       $('room').value = window.location.hash;
     }
  
-    setTimeout(function() { $('name').activate() }, 500);
-
     var signOnController = new JsChat.SignOnController();
   }
 });

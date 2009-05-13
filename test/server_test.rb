@@ -188,6 +188,19 @@ class TestJsChat < Test::Unit::TestCase
     assert response['error']
   end
 
+  def test_flood_protection
+    identify_as 'nick', '#oublinet'
+    response = ''
+    # simulate a flood and extract the error response
+    (1..50).detect do
+      response = @jschat.receive_data({ 'send' => 'a' * 10, 'to' => '#oublinet' }.to_json)
+      response.match /error/
+    end
+    response = JSON.parse response
+    assert response['error']
+    assert_match /wait a few seconds/i, response['error']['message']
+  end
+
   private
 
     def identify_as(name, channel = nil)
