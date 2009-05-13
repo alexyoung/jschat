@@ -1,6 +1,6 @@
 module JsChat
   module FloodProtection 
-   def seen!
+    def seen!
       @activity_log ||= []
       @activity_log << Time.now.utc
       @activity_log.shift if @activity_log.size > 50
