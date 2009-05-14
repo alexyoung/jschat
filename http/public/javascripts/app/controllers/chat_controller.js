@@ -3,7 +3,7 @@ JsChat.ChatController = Class.create({
     $('loading').show();
 
     this.resizeEvent();
-    setTimeout(this.initDisplay.bindAsEventListener(this), 1000);
+    setTimeout(this.initDisplay.bindAsEventListener(this), 50);
     this.tabCompletion = new TabCompletion('message');
 
     Event.observe(window, 'focus', this.focusEvent.bindAsEventListener(this));

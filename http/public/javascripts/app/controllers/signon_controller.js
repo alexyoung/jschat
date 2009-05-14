@@ -28,7 +28,7 @@ JsChat.SignOnController = Class.create({
         try {
           var json = transport.responseText.evalJSON(true);
           if (json['action'] == 'reload' && this.retries < 4) {
-            setTimeout(function() { this.signOn() }.bind(this), 500);
+            setTimeout(function() { this.signOn() }.bind(this), 50);
           } else if (json['action'] == 'redirect') {
             if (window.location.toString().match(new RegExp(json['to'] + '$'))) {
               window.location.reload();
