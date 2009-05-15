@@ -28,6 +28,7 @@ JsChat.ChatController = Class.create({
     $('messages').setStyle({ width: windowSize.width - 220 + 'px' });
     $('messages').setStyle({ height: windowSize.height - 100 + 'px' });
     $('message').setStyle({ width: windowSize.width - 290 + 'px' });
+    $('names').setStyle({ height: windowSize.height - 200 + 'px' });
     Display.scrollMessagesToTop();
   },
 
