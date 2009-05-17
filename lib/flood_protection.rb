@@ -17,7 +17,7 @@ module JsChat
           raise JsChat::Errors::StillFlooding
         else
           @still_flooding = true
-          raise JsChat::Errors::Flooding.new('Please wait a few seconds before responding')
+          raise JsChat::Errors::Flooding.new(:flooding, 'Please wait a few seconds before responding')
         end
       elsif @still_flooding
         @still_flooding = false

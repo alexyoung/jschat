@@ -54,8 +54,8 @@ class TestJsChat < Test::Unit::TestCase
   end
 
   def test_invalid_identify
-    expected = { 'display' => 'error',  'error' => { 'message' => 'Invalid name' } }.to_json + "\n"
-    assert_equal expected, @jschat.receive_data({ 'identify' => '@lex' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'identify' => '@lex' }.to_json)
+    assert_equal JsChat::Errors::Codes.invert[:invalid_name], response['error']['code']
   end
 
   def test_ensure_nicks_are_unique
@@ -92,13 +92,14 @@ class TestJsChat < Test::Unit::TestCase
 
     expected = { 'display' => 'error', 'error' => { 'message' => 'Already in that room' } }.to_json + "\n"
     @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
-    assert_equal expected, @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
+    assert_equal JsChat::Errors::Codes.invert[:already_joined], response['error']['code']
   end
 
   def test_identify_twice
     identify_as 'nick'
-    expected = { 'display' => 'error', 'error' => { 'message' => 'Name already taken' } }.to_json + "\n"
-    assert_equal expected, @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    response = JSON.parse @jschat.receive_data({ 'identify' => 'nick' }.to_json)
+    assert_equal JsChat::Errors::Codes.invert[:name_taken], response['error']['code']
   end
 
   def test_names

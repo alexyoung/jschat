@@ -26,11 +26,11 @@ module JsChat
 
     def name=(name)
       if @connection and @connection.name_taken? name
-        raise JsChat::Errors::InvalidName.new('Name taken')
+        raise JsChat::Errors::InvalidName.new(:name_taken, 'Name taken')
       elsif User.valid_name?(name)
         @name = name
       else
-        raise JsChat::Errors::InvalidName.new('Invalid name')
+        raise JsChat::Errors::InvalidName.new(:invalid_name, 'Invalid name')
       end
     end
 
@@ -111,7 +111,7 @@ module JsChat
 
     def join(user)
       if @users.include? user
-        Error.new('Already in that room')
+        Error.new(:already_joined, 'Already in that room')
       else
         @users << user
         user.rooms << self
@@ -122,7 +122,7 @@ module JsChat
 
     def part(user)
       if not @users.include?(user)
-        Error.new('Not in that room')
+        Error.new(:not_in_room, 'Not in that room')
       else
         user.rooms.delete_if { |r| r == self }
         @users.delete_if { |u| u == user }
@@ -190,7 +190,7 @@ module JsChat
   # {"identify":"alex"}
   def identify(name, options = {})
     if name_taken? name
-      Error.new('Name already taken')
+      Error.new(:name_taken, 'Name already taken')
     else
       @user.name = name
       { 'display' => 'identified', 'identified' => @user }
@@ -205,7 +205,7 @@ module JsChat
     if room and room.users.include? @user
       room.lastlog
     else
-      Error.new("Please join this room first")
+      Error.new(:not_in_room, "Please join this room first")
     end
   end
 
@@ -215,7 +215,7 @@ module JsChat
     if room and room.users.include? @user
       room.send_message({ 'message' => message, 'user' => @user.name })
     else
-      send_response Error.new("Please join this room first")
+      send_response Error.new(:not_in_room, "Please join this room first")
     end
   end
 
@@ -227,13 +227,13 @@ module JsChat
       user.private_message({ 'message' => message, 'user' => @user.name })
       @user.private_message({ 'message' => message, 'user' => @user.name })
     else
-      Error.new('User not online')
+      Error.new(:not_online, 'User not online')
     end
   end
 
   def send_message(message, options)
     if options['to'].nil?
-      send_response Error.new('Please specify who to send the message to or join a channel')
+      send_response Error.new(:to_required, 'Please specify who to send the message to or join a channel')
     elsif options['to'][0].chr == '#'
       room_message message, options
     else
@@ -246,7 +246,7 @@ module JsChat
       room = Room.find_or_create(room_name)
       room.join @user
     else
-      Error.new('Invalid room name')
+      Error.new(:invalid_room, 'Invalid room name')
     end
   end
 
@@ -255,7 +255,7 @@ module JsChat
     if room
       room.part @user
     else
-      Error.new("You are not in that room")
+      Error.new(:not_in_room, "You are not in that room")
     end
   end
 
@@ -264,7 +264,7 @@ module JsChat
     if room
       { 'display' => 'names', 'names' => room.users, 'room' => room.name }
     else
-      Error.new('No such room')
+      Error.new(:room_not_available, 'No such room')
     end
   end
 
@@ -299,7 +299,7 @@ module JsChat
       field, value = @user.send :change, options[change]
       { 'display' => 'notice', 'notice' => "Your #{field} has been changed to: #{value}" }
     else
-      Error.new("Invalid change request")
+      Error.new(:invalid_request, "Invalid change request")
     end
   rescue JsChat::Errors::InvalidName => exception
     exception
@@ -326,7 +326,7 @@ module JsChat
     response = ''
 
     if data and data.size > ServerConfig[:max_message_length]
-      raise JsChat::Errors::MessageTooLong.new('Message too long')
+      raise JsChat::Errors::MessageTooLong.new(:message_too_long, 'Message too long')
     end
 
     data.chomp.split("\n").each do |line|
@@ -340,7 +340,7 @@ module JsChat
       else
         ['lastlog', 'change', 'send', 'join', 'names', 'part'].each do |command|
           if @user.name.nil?
-            response << send_response(Error.new("Identify first"))
+            response << send_response(Error.new(:identity_required, "Identify first"))
             return response
           end
 
