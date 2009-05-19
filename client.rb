@@ -431,6 +431,7 @@ Commands start with a forward slash.  Parameters in square brackets are optional
 /switch #room       - Speak in a different room.  Alias: /s
 /part #room         - Leave a room.  Alias: /p
 /message person     - Send a private message.  Alias: /m
+/lastlog            - Display the last 100 messages for a room.
 /quit               - Quit JsChat
 *** End Help ***
 
@@ -466,7 +467,7 @@ Commands start with a forward slash.  Parameters in square brackets are optional
             display_text message
           end
         when %r{^/}
-          display_text '* Command not found'
+          display_text '* Command not found.  Try using /help'
         else
           @connection.send_message(line)
       end

@@ -49,10 +49,14 @@ JsChat.ChatController = Class.create({
         }.bind(this));
 
         if (!command_posted) {
-          new Ajax.Request('/message', {
-            method: 'post',
-            parameters: { 'message': message, 'to': PageHelper.currentRoom() }
-          });
+          if (message.match(/^\//)) {
+            Display.add_message('Error: Command not found.  Use /help display commands.', 'error');
+          } else {
+            new Ajax.Request('/message', {
+              method: 'post',
+              parameters: { 'message': message, 'to': PageHelper.currentRoom() }
+            });
+          }
         }
       }
     } catch (exception) {
@@ -71,7 +75,15 @@ JsChat.ChatController = Class.create({
     $('room-name').innerHTML = PageHelper.currentRoom();
     $('message').activate();
     $$('.header .navigation li').invoke('hide');
-    $('quit-link').show();
+    $('quit-nav').show();
+    $('help-nav').show();
+
+    $('help-link').observe('click', function(e) {
+      UserCommands['/help']();
+      $('message').activate();
+      Event.stop(e);
+      return false;
+    });
 
     this.startPolling();
     this.joinRoom();
