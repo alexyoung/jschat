@@ -92,7 +92,7 @@ module JsChat
     
     def names(json)
       @connection.names = json.collect { |u| u['name'] }
-      "* In this channel: #{@connection.names.join(', ')}"
+      "* In this room: #{@connection.names.join(', ')}"
     end
 
     def identified(json)
@@ -116,7 +116,7 @@ module JsClient
     @keyboard = keyboard
   end
 
-  # This should take channel into account
+  # This should take room into account
   def names=(names)
     @names = names
   end
@@ -135,18 +135,21 @@ module JsClient
       Ncurses.noecho
       Ncurses.use_default_colors
       Ncurses.init_pair 2, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLUE
-      Ncurses.init_pair 3, Ncurses::COLOR_RED, Ncurses::COLOR_BLACK
+      Ncurses.init_pair 3, Ncurses::COLOR_CYAN, Ncurses::COLOR_BLACK
+      Ncurses.init_pair 4, 3, Ncurses::COLOR_BLACK
+      Ncurses.init_pair 5, 8, Ncurses::COLOR_BLACK
+      Ncurses.init_pair 6, Ncurses::COLOR_RED, Ncurses::COLOR_BLACK
 
       @history_position = 0
       @history = []
       @lastlog = []
-      @channel_name = ''
+      @room_name = ''
 
       setup_windows
     end
 
-    def channel_name=(channel_name)
-      @channel_name = channel_name
+    def room_name=(room_name)
+      @room_name = room_name 
     end
 
     def setup_windows
@@ -183,7 +186,7 @@ module JsClient
     end
 
     def display_input
-      offset = @channel_name.size > 0 ? @channel_name.size + 3 : 0
+      offset = @room_name.size > 0 ? @room_name.size + 3 : 0
       @input_field = Ncurses::Form::FIELD.new(1, Ncurses.COLS - offset, 0, offset, 0, 0)
       Ncurses::Form.field_opts_off(@input_field, Ncurses::Form::O_AUTOSKIP)
       Ncurses::Form.field_opts_off(@input_field, Ncurses::Form::O_STATIC)
@@ -193,10 +196,10 @@ module JsClient
       @input_field.set_field_buffer 0, ''
     end
 
-    def display_channel_name
-      if @channel_name
+    def display_room_name
+      if @room_name
         display_input
-        @windows[:input].mvprintw(0, 0, "[#{@channel_name}] ")
+        @windows[:input].mvprintw(0, 0, "[#{@room_name}] ")
         @windows[:input].refresh
       end
     end
@@ -219,7 +222,7 @@ module JsClient
 
       display_windows
       display_time
-      display_channel_name
+      display_room_name
 
       @lastlog.each do |message|
         display_text message
@@ -374,9 +377,43 @@ module JsClient
     end
 
     def display_text(message)
-      @windows[:text].addstr "#{Time.now.strftime('%H:%M')} #{message}\n"
+      @windows[:text].addstr "#{Time.now.strftime('%H:%M')} "
+
+      if message.match /^\*/
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(3))
+      end
+
+      if message.match /^\* \[ERROR\]/
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(6))
+      elsif message.match /^\[/
+        channel_info = message.split(']').first.sub /\[/, ''
+        message.sub! "[#{channel_info}]", ''
+
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(5))
+        @windows[:text].addstr "["
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(4))
+        @windows[:text].addstr "#{channel_info}"
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(5))
+        @windows[:text].addstr "] "
+
+        name = message.split('>').first.sub(/</, '').strip
+        message.sub!("<#{name}> ", '')
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(5))
+        @windows[:text].addstr '<'
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(0))
+        @windows[:text].addstr "#{name}"
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(5))
+        @windows[:text].addstr '>'
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(0))
+      end
+
+      @windows[:text].addstr "#{message}\n"
       @windows[:text].refresh
       @windows[:input].refresh
+
+      if message.match /^\*/
+        @windows[:text].attrset(Ncurses.COLOR_PAIR(0))
+      end
     end
 
     def quit
@@ -384,10 +421,28 @@ module JsClient
       exit
     end
 
+    def help_text
+      <<-TEXT
+*** JsChat Help ***
+Commands start with a forward slash.  Parameters in square brackets are optional.
+/name new_name      - Change your name.  Alias: /nick
+/names [room name]  - List the people in a room.
+/join #room         - Join a room.  Alias: /j
+/switch #room       - Speak in a different room.  Alias: /s
+/part #room         - Leave a room.  Alias: /p
+/message person     - Send a private message.  Alias: /m
+/quit               - Quit JsChat
+*** End Help ***
+
+      TEXT
+    end
+
     def manage_commands(line)
       operand = strip_command line
       case line
-        when %r{^/nick}
+        when %r{^/switch}, %r{^/s}
+          @connection.switch_room operand
+        when %r{^/nick}, %{^/name}
           @connection.send_identify operand
         when %r{^/quit}
           quit
@@ -406,6 +461,12 @@ module JsClient
               @connection.send_private_message message[1], message[2]
             end
           end
+        when %r{^/help}
+          help_text.split("\n").each do |message|
+            display_text message
+          end
+        when %r{^/}
+          display_text '* Command not found'
         else
           @connection.send_message(line)
       end
@@ -439,30 +500,35 @@ module JsClient
     @keyboard.show_message "* [CLIENT ERROR] #{exception}"
   end
 
-  def send_join(channel)
-    @current_channel = channel
-    @keyboard.channel_name = channel
-    @keyboard.display_channel_name
-    send_data({ 'join' => channel }.to_json)
+  def send_join(room)
+    @current_room = room 
+    @keyboard.room_name = room 
+    @keyboard.display_room_name
+    send_data({ 'join' => room }.to_json)
   end
 
-  def send_part(channel = nil)
-    channel = @current_channel if channel.nil?
-    send_data({ 'part' => channel }.to_json)
+  def switch_room(room)
+    @current_room = room 
+    @keyboard.show_message "* Switched room to: #{room}"
   end
 
-  def send_names(channel = nil)
-    channel = @current_channel if channel.nil? or channel.strip.empty?
-    send_data({ 'names' => channel }.to_json)
+  def send_part(room = nil)
+    room = @current_room if room.nil?
+    send_data({ 'part' => room }.to_json)
   end
 
-  def send_lastlog(channel = nil)
-    channel = @current_channel if channel.nil? or channel.strip.empty?
-    send_data({ 'lastlog' => channel }.to_json)
+  def send_names(room = nil)
+    room = @current_room if room.nil? or room.strip.empty?
+    send_data({ 'names' => room }.to_json)
+  end
+
+  def send_lastlog(room = nil)
+    room = @current_room if room.nil? or room.strip.empty?
+    send_data({ 'lastlog' => room }.to_json)
   end
 
   def send_message(line)
-    send_data({ 'to' => @current_channel, 'send' => line }.to_json + "\n")
+    send_data({ 'to' => @current_room, 'send' => line }.to_json + "\n")
   end
 
   def send_private_message(user, message)
