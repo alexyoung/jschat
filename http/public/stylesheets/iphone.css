@@ -1,0 +1,86 @@
+body { margin: 0 auto; padding: 0; font-family: 'Lucida Grande', arial, helvetica, sans-serif; color: #111; text-align: center; }
+html, body { background: #f0f0f0; }
+
+h1, h2, h3, h4 { margin: 0; padding: 0; }
+
+h1 { text-align: left; margin-left: 20px }
+
+.header { position: absolute; top: 0; height: 59px; left: 0; width: 100%; z-index: 10; background-color: #fcf; clear: both; }
+.header img { border: none; margin: 5px 0 0 0 }
+.header h1 { width: 200px; float: left }
+.header .navigation { float: right; list-style-type: none; margin: 18px 0 0 0; padding: 0 }
+.header .navigation li { float: left; margin: 0 20px 0 0; padding: 0 }
+.header .navigation li a { text-decoration: none; color: #fff; background-color: #777; padding: 1px 3px }
+.header .navigation li a:hover { background-color: #fff; color: #555 }
+.header .navigation li#quit-nav a { background-color: #990000  }
+.header .navigation li#quit-nav a:hover { color: #990000; background-color: #fff }
+.header-shadow { width: 100%; height: 6px; position: absolute; top: 59px; left: 0; background-image: url('/images/shadow.png'); background-repeat: repeat-x }
+
+.page { margin-top: 60px }
+
+#messages { height: 300px; padding: 0; overflow: auto; background-color: #fff; float: left; text-align: left; display: inline; }
+#messages { list-style-type: none; overflow: auto }
+#messages li { padding: 0.25em 0; border-bottom: 1px solid #f0f0f0; float: left; width: 100%; line-height: 1.5em }
+#messages span.user { margin: 0; text-align: left; font-weight: bold; display: inline; float: left }
+#messages .active { color: #000099 }
+#messages .mentioned { color: #cccc00 }
+#messages span.time { text-align: left; margin: 0 10px; display: block; float: left; color: #ccc !important; font-style: normal !important }
+#messages span.message { display: inline; padding: 0 0 0 10px }
+#messages .help { color: #990000 }
+#messages .help span.command { width: 12em; display: block; float: left; font-weight: bold }
+#messages li.server { color: #999; font-style: italic }
+#messages li.error { color: #990000; font-style: italic; font-weight: bold }
+#messages li.server span.time,
+#messages li.error span.time { color: #999 }
+img.inline-image { border: 1px solid #ccc; padding: 2px }
+img.inline-image {
+  max-width: 200px;
+  width: expression(this.width > 200 ? 200: true);
+}
+
+#input { clear: both; text-align: left; margin: 0 0 0 20px; padding: 0; }
+form { margin: 0; padding: 0; }
+#message { }
+#message:focus { background-color: #ffc }
+
+#info { text-align: left; margin: 0 0 0 20px; display: none;}
+#room-name { padding: 10px 0 }
+
+ul#names { display: none; margin: 0; padding: 0; list-style-type: none; height: 200px; overflow: auto; } 
+ul#names li { margin: 0; padding: 0.25em 0; } 
+ul#names li.idle { color: #777 } 
+
+.footer { border-top: 1px solid #ccc; padding: 8px 0 0 0; font-size: 80%; font-style: italic; color: #444; margin: 40px 0 0 0 }
+
+/* Front page */
+#sign-on { padding: 10px 0; margin: 10px auto; background-color: #fff; border: 1px solid #ccc; clear: both; text-align: center }
+#sign-on input[type="text"] { width: 12em }
+#sign-on input:focus { background-color: #ffc }
+.content { text-align: left; margin: 0 20px; padding: 5px 0 }
+.content em { padding: 1px 2px; font-style: normal; background-color: #ffc; color: #880000 }
+.content h2 { margin-top: 20px }
+
+#feedback .error { padding: 10px; border: 2px solid #990000; background-color: #fff; margin: 10px 0 }
+#loading { background-color: #990000; color: #fff; font-weight: bold; padding: 3px; margin: 0 auto; position: absolute; z-index: 1020; top: 0; right: 10px; border-top: none }
+
+/* Iphone templates */
+.back_button_template {
+    font-family: Helvetica;
+    font-weight: bold;
+    font-size: 12px;
+    color: rgb(255, 255, 255);
+    text-shadow: rgba(0, 0, 0, 0.6) 0px -1px 0px;
+    text-align: center;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    height: 30px;
+    -webkit-dashboard-region: dashboard-region(control rectangle);
+    width: 60px;
+    position: absolute;
+    right: auto;
+    bottom: auto;
+    margin-top: 0px;
+    top: 7px;
+    left: 5px;
+}
