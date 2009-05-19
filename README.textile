@@ -7,7 +7,7 @@ JsChat is similar to IRC, but it's a fundamentally simpler system.
 The *web app* has lots of interesting features:
 
 * IRC-like commands: /names, /name new_name (/nick works too), /clear, /lastlog
-* It's pretty tiny; it's built with "Sinatra":http://sinatrarb.com and "Prototype":http://prototypejs.org
+* It's pretty tiny; it's built with "Sinatra":http://www.sinatrarb.com and "Prototype":http://prototypejs.org
 * Auto-linking: pasting an image displays it inline, youtube videos will appear as well
 * Last messages are displayed on join: the last 100 messages are displayed, so you don't feel lost when you join a room
 * Tab completion!
