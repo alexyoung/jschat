@@ -171,7 +171,7 @@ module JsClient
 
     def display_windows
       rows, cols = get_window_size
-      @windows[:text] = Ncurses.newwin(rows - 2, cols, 0, 0)
+      @windows[:text] = Ncurses.newwin(rows - 1, cols, 0, 0)
       @windows[:info] = Ncurses.newwin(rows - 1, cols, rows - 2, 0)
       @windows[:input] = Ncurses.newwin(rows, cols, rows - 1, 0)
       @windows[:text].scrollok(true)
@@ -206,7 +206,7 @@ module JsClient
 
     def display_time
       @windows[:info].move 0, 0
-      @windows[:info].addstr "[#{Time.now.strftime('%H:%M')}]"
+      @windows[:info].addstr "[#{Time.now.strftime('%H:%M')}]\n"
       @windows[:info].refresh
       @windows[:input].refresh
     end
@@ -377,6 +377,7 @@ module JsClient
     end
 
     def display_text(message)
+      message = message.dup
       @windows[:text].addstr "#{Time.now.strftime('%H:%M')} "
 
       if message.match /^\*/
@@ -410,6 +411,8 @@ module JsClient
       @windows[:text].addstr "#{message}\n"
       @windows[:text].refresh
       @windows[:input].refresh
+
+      display_time
 
       if message.match /^\*/
         @windows[:text].attrset(Ncurses.COLOR_PAIR(0))
