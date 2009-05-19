@@ -213,7 +213,7 @@ module JsChat
     room = Room.find options['to']
 
     if room and room.users.include? @user
-      room.send_message({ 'message' => message, 'user' => @user.name })
+      room.send_message({ 'message' => message, 'user' => @user.name, 'time' => Time.now.utc })
     else
       send_response Error.new(:not_in_room, "Please join this room first")
     end
@@ -224,8 +224,9 @@ module JsChat
 
     if user
       # Return the message to the user, and send it to the other person too
-      user.private_message({ 'message' => message, 'user' => @user.name })
-      @user.private_message({ 'message' => message, 'user' => @user.name })
+      now = Time.now.utc
+      user.private_message({ 'message' => message, 'user' => @user.name, 'time' => now })
+      @user.private_message({ 'message' => message, 'user' => @user.name, 'time' => now })
     else
       Error.new(:not_online, 'User not online')
     end

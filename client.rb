@@ -4,10 +4,30 @@ require 'rubygems'
 require 'eventmachine'
 require 'json'
 require 'ncurses'
+require 'optparse'
+
+options = {}
+
+ARGV.clone.options do |opts|
+  script_name = File.basename($0)
+  opts.banner = "Usage: #{$0} [options]" 
+
+  opts.separator ""
+
+  opts.on("-h", "--hostname=host", String, "JsChat server hostname") { |o| options['hostname'] = o }
+  opts.on("-p", "--port=port", String, "JsChat server port number") { |o| options['port'] = o }
+  opts.on("-r", "--room=#room", String, "Channel to auto-join: remember to escape the hash") { |o| options['room'] = o }
+  opts.on("-n", "--nick=name", String, "Your name") { |o| options['nick'] = o }
+  opts.on("--help", "-H", "This text") { puts opts; exit 0 }
+
+  opts.parse!
+end
 
 ClientConfig = {
-  :port => 6789,
-  :ip => ARGV[0] || '0.0.0.0'
+  :port => options['port'] || '6789',
+  :ip => options['hostname'] || '0.0.0.0',
+  :name => options['nick'] || ENV['LOGNAME'],
+  :auto_join => options['room'] || '#jschat'
 }
 
 module Ncurses
@@ -21,7 +41,7 @@ module JsChat
     end
 
     def legal_commands
-      %w(message joined quit error join names part identified part_notice quit_notice join_notice)
+      %w(messages message joined quit error join names part identified part_notice quit_notice join_notice)
     end
 
     def legal?(command)
@@ -30,10 +50,20 @@ module JsChat
 
     def message(json)
       if json['room']
-        "#{Time.now.strftime('%H:%M')} [#{json['room']}] <#{json['user']}> #{json['message']}"
+        "[#{json['room']}] <#{json['user']}> #{json['message']}"
       else
-        "#{Time.now.strftime('%H:%M')} PRIVATE <#{json['user']}> #{json['message']}"
+        "PRIVATE <#{json['user']}> #{json['message']}"
       end
+    end
+
+    def messages(messages)
+      results = ''
+      messages.each do |json|
+        if json.has_key?('display') and legal? json['display']
+          results << send(json['display'], json[json['display']]) + "\n"
+        end
+      end
+      results.strip
     end
 
     def join(json)
@@ -66,6 +96,10 @@ module JsChat
     end
 
     def identified(json)
+      if ClientConfig[:auto_join]
+        @connection.send_join ClientConfig[:auto_join]
+      end
+
       "* You are now known as #{json['name']}"
     end
 
@@ -101,6 +135,7 @@ module JsClient
       Ncurses.noecho
       Ncurses.use_default_colors
       Ncurses.init_pair 2, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLUE
+      Ncurses.init_pair 3, Ncurses::COLOR_RED, Ncurses::COLOR_BLACK
 
       @history_position = 0
       @history = []
@@ -330,14 +365,16 @@ module JsClient
       @windows[:input].refresh
     end
 
-    def show_message(message)
-      @lastlog << message.dup
-      @lastlog.shift if @lastlog.size > 25
-      display_text message
+    def show_message(messages)
+      messages.split("\n").each do |message|
+        @lastlog << message.dup
+        @lastlog.shift if @lastlog.size > 25
+        display_text message
+      end
     end
 
     def display_text(message)
-      @windows[:text].addstr "#{message}\n"
+      @windows[:text].addstr "#{Time.now.strftime('%H:%M')} #{message}\n"
       @windows[:text].refresh
       @windows[:input].refresh
     end
@@ -360,6 +397,8 @@ module JsClient
           @connection.send_join operand
         when %r{^/part}, %r{^/p}
           @connection.send_part operand
+        when %r{^/lastlog}
+          @connection.send_lastlog
         when %r{^/message}, %r{^/m}
           if operand and operand.size > 0
             message = operand.match(/([^ ]*)\s+(.*)/)
@@ -396,6 +435,7 @@ module JsClient
       @keyboard.show_message "* [SERVER] #{data}"
     end
   rescue Exception => exception
+    
     @keyboard.show_message "* [CLIENT ERROR] #{exception}"
   end
 
@@ -414,6 +454,11 @@ module JsClient
   def send_names(channel = nil)
     channel = @current_channel if channel.nil? or channel.strip.empty?
     send_data({ 'names' => channel }.to_json)
+  end
+
+  def send_lastlog(channel = nil)
+    channel = @current_channel if channel.nil? or channel.strip.empty?
+    send_data({ 'lastlog' => channel }.to_json)
   end
 
   def send_message(line)
@@ -438,7 +483,7 @@ module JsClient
   def post_init
     # When connected
     @protocol = JsChat::Protocol.new self
-    send_identify ENV['LOGNAME']
+    send_identify ClientConfig[:name]
   end
 end
 
