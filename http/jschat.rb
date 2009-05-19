@@ -278,6 +278,14 @@ helpers do
   include Rack::Utils
   alias_method :h, :escape_html
 
+  def detected_layout
+    iphone_user_agent? ? :iphone : :layout
+  end
+
+  def iphone_user_agent?
+    request.env["HTTP_USER_AGENT"] && request.env["HTTP_USER_AGENT"][/(Mobile\/.+Safari)/]
+  end
+
   def load_bridge
     cookie = request.cookies['jschat-id']
     JsChat::Bridge.find_server cookie
@@ -310,7 +318,7 @@ get '/' do
     redirect "/chat/#{@bridge.server.connection.last_room}" 
   else
     response.set_cookie 'jschat-id', ''
-    erb :index
+    erb :index, :layout => detected_layout
   end
 end
 
@@ -376,9 +384,9 @@ get '/chat/' do
   load_bridge
 
   if @bridge and @bridge.server and @bridge.server.identified?
-    erb :message_form
+    erb :message_form, :layout => detected_layout
   else
-    erb :index
+    erb :index, :layout => detected_layout
   end
 end
 
