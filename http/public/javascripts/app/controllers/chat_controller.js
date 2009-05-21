@@ -72,7 +72,8 @@ JsChat.ChatController = Class.create({
     Display.show_unread = false;
     Display.ignore_notices = false;
 
-    $('room-name').innerHTML = PageHelper.currentRoom();
+    $('room-name').innerHTML = TextHelper.truncateRoomName(PageHelper.currentRoom());
+    $('room-name').title = PageHelper.currentRoom();
     $('message').activate();
     $$('.header .navigation li').invoke('hide');
     $('quit-nav').show();

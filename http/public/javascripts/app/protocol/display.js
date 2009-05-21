@@ -94,7 +94,8 @@ var Display = {
   },
 
   join: function(join) {
-    $('room-name').innerHTML = join['room'];
+    $('room-name').innerHTML = TextHelper.truncateRoomName(join['room']);
+    $('room-name').title = PageHelper.currentRoom();
   },
 
   join_notice: function(join) {

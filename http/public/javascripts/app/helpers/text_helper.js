@@ -20,6 +20,10 @@ var TextHelper = {
     return text.truncate(15);
   },
 
+  truncateRoomName: function(text) {
+    return text.truncate(15);
+  },
+
   decorateMessage: function(text) {
     return EmoteHelper.insertEmotes(this.autoLink(this.textilize(text)));
   },
