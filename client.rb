@@ -371,7 +371,7 @@ module JsClient
     def show_message(messages)
       messages.split("\n").each do |message|
         @lastlog << message.dup
-        @lastlog.shift if @lastlog.size > 25
+        @lastlog.shift if @lastlog.size > 250
         display_text message
       end
     end
@@ -458,6 +458,10 @@ Commands start with a forward slash.  Parameters in square brackets are optional
           @connection.send_part operand
         when %r{^/lastlog}
           @connection.send_lastlog
+        when %r{^/clear}
+          @windows[:text].clear
+          @windows[:text].refresh
+          display_time
         when %r{^/message}, %r{^/m}
           if operand and operand.size > 0
             message = operand.match(/([^ ]*)\s+(.*)/)
