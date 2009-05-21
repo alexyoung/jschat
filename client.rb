@@ -135,10 +135,10 @@ module JsClient
       Ncurses.noecho
       Ncurses.use_default_colors
       Ncurses.init_pair 2, Ncurses::COLOR_WHITE, Ncurses::COLOR_BLUE
-      Ncurses.init_pair 3, Ncurses::COLOR_CYAN, Ncurses::COLOR_BLACK
-      Ncurses.init_pair 4, 3, Ncurses::COLOR_BLACK
-      Ncurses.init_pair 5, 8, Ncurses::COLOR_BLACK
-      Ncurses.init_pair 6, Ncurses::COLOR_RED, Ncurses::COLOR_BLACK
+      Ncurses.init_pair 3, Ncurses::COLOR_CYAN, -1
+      Ncurses.init_pair 4, Ncurses::COLOR_YELLOW, -1
+      Ncurses.init_pair 5, Ncurses::COLOR_BLACK, -1
+      Ncurses.init_pair 6, Ncurses::COLOR_RED, -1
 
       @history_position = 0
       @history = []
