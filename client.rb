@@ -44,8 +44,22 @@ module JsChat
       %w(messages message joined quit error join names part identified part_notice quit_notice join_notice)
     end
 
+    def legal_change_commands
+      %w(user)
+    end
+
     def legal?(command)
       legal_commands.include? command
+    end
+
+    def legal_change?(command)
+      legal_change_commands.include? command
+    end
+
+    def change_user(json)
+      original_name = json['name'].keys().first
+      new_name = json['name'].values.first
+      "* User #{original_name} is now known as #{new_name}"
     end
 
     def message(json)
@@ -96,8 +110,9 @@ module JsChat
     end
 
     def identified(json)
-      if ClientConfig[:auto_join]
+      if ClientConfig[:auto_join] and !@auto_joined
         @connection.send_join ClientConfig[:auto_join]
+        @auto_joined = true
       end
 
       "* You are now known as #{json['name']}"
@@ -446,12 +461,12 @@ Commands start with a forward slash.  Parameters in square brackets are optional
       case line
         when %r{^/switch}, %r{^/s}
           @connection.switch_room operand
-        when %r{^/nick}, %{^/name}
-          @connection.send_identify operand
-        when %r{^/quit}
-          quit
         when %r{^/names}
           @connection.send_names operand
+        when %r{^/name}, %r{^/nick}
+          @connection.send_change_name operand
+        when %r{^/quit}
+          quit
         when %r{^/join}, %r{^/j}
           @connection.send_join operand
         when %r{^/part}, %r{^/p}
@@ -495,13 +510,18 @@ Commands start with a forward slash.  Parameters in square brackets are optional
   end
 
   def receive_data(data)
-    json = JSON.parse(data)
-
-    # Execute the json
-    if json.has_key?('display') and @protocol.legal? json['display']
-      @keyboard.show_message @protocol.send(json['display'], json[json['display']])
-    else
-      @keyboard.show_message "* [SERVER] #{data}"
+    data.split("\n").each do |line|
+      json = JSON.parse(line.strip)
+      # Execute the json
+      if json.has_key?('display') and @protocol.legal? json['display']
+        @keyboard.show_message @protocol.send(json['display'], json[json['display']])
+      elsif json.has_key?('change') and @protocol.legal_change? json['change']
+        @keyboard.show_message @protocol.send("change_#{json['change']}", json[json['change']])
+      elsif json.has_key? 'notice'
+        @keyboard.show_message "* #{json['notice']}"
+      else
+        @keyboard.show_message "* [SERVER] #{line}"
+      end
     end
   rescue Exception => exception
     
@@ -545,6 +565,10 @@ Commands start with a forward slash.  Parameters in square brackets are optional
 
   def send_identify(username)
     send_data({ 'identify' => username }.to_json + "\n")
+  end
+
+  def send_change_name(username)
+    send_data({ 'change' => 'user', 'user' => { 'name' => username } }.to_json + "\n")
   end
 
   def unbind
