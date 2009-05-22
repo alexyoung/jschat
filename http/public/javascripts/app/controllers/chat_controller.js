@@ -16,7 +16,7 @@ JsChat.ChatController = Class.create({
   focusEvent: function() {
     Display.unread = 0;
     Display.show_unread = false;
-    document.title = 'JsChat';
+    document.title = PageHelper.title();
   },
 
   blurEvent: function() {
@@ -99,7 +99,7 @@ JsChat.ChatController = Class.create({
           method: 'get',
           parameters: { time: new Date().getTime(), room: PageHelper.currentRoom() },
           onFailure: function() { Display.add_message("Error: Couldn't join channel", 'server'); $('loading').hide(); },
-          onComplete: function() { setTimeout(this.updateNames.bindAsEventListener(this), 250); }.bind(this)
+          onComplete: function() { setTimeout(this.updateNames.bindAsEventListener(this), 250); document.title = PageHelper.title(); }.bind(this)
         });
       }.bind(this)
     });
