@@ -32,6 +32,7 @@ ClientConfig = {
 
 module Ncurses
   KEY_DELETE = ?\C-h
+  KEY_TAB = 9
 end
 
 module JsChat
@@ -59,6 +60,8 @@ module JsChat
     def change_user(json)
       original_name = json['name'].keys().first
       new_name = json['name'].values.first
+      @connection.names.delete original_name
+      @connection.names << new_name
       "* User #{original_name} is now known as #{new_name}"
     end
 
@@ -127,6 +130,51 @@ module JsChat
 end
 
 module JsClient
+  class TabComplete
+    attr_accessor :matched, :index
+
+    def initialize
+    end
+
+    def run(names, field, form, cursor_x)
+      form.form_driver Ncurses::Form::REQ_BEG_LINE
+      text = field.field_buffer(0).dup.strip
+      if text.size > 0 and cursor_x > 0
+        if @matched.nil?
+          source = text.slice(0, cursor_x)
+          source = text.split(' ').last if text.match(' ')
+          @index = 0
+        else
+          source = @matched
+          @index += 1
+        end
+        names = names.sort.find_all { |name| name.match /^#{source}/i }
+        @index = 0 if @index >= names.size
+        name = names[@index]
+        if name and (@matched or source.size == text.size)
+          @matched = source
+          field.set_field_buffer(0, "#{name}: ")
+          form.form_driver Ncurses::Form::REQ_END_LINE
+          form.form_driver Ncurses::Form::REQ_NEXT_CHAR
+        else
+          @matched = nil
+          @index = 0
+          (0..cursor_x - 1).each do
+            form.form_driver Ncurses::Form::REQ_NEXT_CHAR
+          end
+        end
+      end
+    end
+
+    def match(input)
+    end
+
+    def reset
+      @matched = nil
+      @index = 0
+    end
+  end
+
   def keyboard=(keyboard)
     @keyboard = keyboard
   end
@@ -317,6 +365,10 @@ module JsClient
       end
     end
 
+    def cursor_position
+      cursor_position = Ncurses.getcurx(@windows[:input]) - 10
+    end
+
     def receive_data(data)
       @clipboard ||= ''
       c = data[0]
@@ -325,9 +377,15 @@ module JsClient
         return
       end
 
+      if c != Ncurses::KEY_TAB
+        @tab_completion.reset
+      end
+
       case c
         when -1
           # Return
+        when Ncurses::KEY_TAB
+          @tab_completion.run @connection.names, @input_field, @input_form, cursor_position
         when Ncurses::KEY_ENTER, ?\n, ?\r
           @input_form.form_driver Ncurses::Form::REQ_BEG_LINE
           line = @input_field.field_buffer(0)
@@ -506,6 +564,7 @@ Commands start with a forward slash.  Parameters in square brackets are optional
 
     def connection=(connection)
       @connection = connection
+      @tab_completion = JsClient::TabComplete.new
     end
   end
 
