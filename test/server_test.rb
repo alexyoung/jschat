@@ -58,6 +58,12 @@ class TestJsChat < Test::Unit::TestCase
     assert_equal JsChat::Errors::Codes.invert[:invalid_name], response['error']['code']
   end
 
+  def test_identify_twice_fails
+    identify_as 'alex'
+    result = JSON.parse identify_as('alex')
+    assert_equal 106, result['error']['code']
+  end
+
   def test_ensure_nicks_are_unique
     identify_as 'alex'
 
@@ -94,12 +100,6 @@ class TestJsChat < Test::Unit::TestCase
     @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
     response = JSON.parse @jschat.receive_data({ 'join' => '#oublinet' }.to_json)
     assert_equal JsChat::Errors::Codes.invert[:already_joined], response['error']['code']
-  end
-
-  def test_identify_twice
-    identify_as 'nick'
-    response = JSON.parse @jschat.receive_data({ 'identify' => 'nick' }.to_json)
-    assert_equal JsChat::Errors::Codes.invert[:name_taken], response['error']['code']
   end
 
   def test_names

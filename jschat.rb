@@ -11,13 +11,14 @@ module JsChat
   class User
     include JsChat::FloodProtection
 
-    attr_accessor :name, :connection, :rooms, :last_activity
+    attr_accessor :name, :connection, :rooms, :last_activity, :identified
 
     def initialize(connection)
       @name = nil
       @connection = connection
       @rooms = []
       @last_activity = Time.now.utc
+      @identified = false
     end
 
     def to_json
@@ -28,6 +29,7 @@ module JsChat
       if @connection and @connection.name_taken? name
         raise JsChat::Errors::InvalidName.new(:name_taken, 'Name taken')
       elsif User.valid_name?(name)
+        @identified = true
         @name = name
       else
         raise JsChat::Errors::InvalidName.new(:invalid_name, 'Invalid name')
@@ -189,8 +191,10 @@ module JsChat
 
   # {"identify":"alex"}
   def identify(name, options = {})
-    if name_taken? name
-      Error.new(:name_taken, 'Name already taken')
+    if @user and @user.identified
+      Error.new :already_identified, 'You have already identified'
+    elsif name_taken? name
+      Error.new :name_taken, 'Name already taken'
     else
       @user.name = name
       { 'display' => 'identified', 'identified' => @user }

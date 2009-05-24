@@ -21,6 +21,7 @@ module JsChat
       101 => :invalid_name,
       104 => :not_online,
       105 => :identity_required,
+      106 => :already_identified,
       # 2xx: Room errors
       200 => :already_joined,
       201 => :invalid_room,
