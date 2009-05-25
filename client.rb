@@ -5,6 +5,7 @@ require 'eventmachine'
 require 'json'
 require 'ncurses'
 require 'optparse'
+require 'time'
 
 options = {}
 
@@ -37,6 +38,13 @@ end
 
 module JsChat
   class Protocol
+    class Response
+      attr_reader :message, :time
+      def initialize(message, time)
+        @message, @time = message, time
+      end
+    end
+
     def initialize(connection)
       @connection = connection
     end
@@ -74,13 +82,50 @@ module JsChat
     end
 
     def messages(messages)
-      results = ''
+      results = []
       messages.each do |json|
-        if json.has_key?('display') and legal? json['display']
-          results << send(json['display'], json[json['display']]) + "\n"
+        results << process_message(json)
+      end
+      results
+    end
+
+    def get_command(json)
+      if json.has_key? 'display' and legal? json['display']
+        'display'
+      elsif json.has_key? 'change' and legal_change? json['change']
+        'change'
+      end
+    end
+
+    def get_time(json)
+      if json.kind_of? Hash and json.has_key? 'time'
+        Time.parse(json['time']).getlocal
+      else
+        Time.now.localtime
+      end
+    end
+
+    def protocol_method_name(command, method_name)
+      if command == 'display'
+        method_name
+      elsif command == 'change'
+        "change_#{method_name}"
+      end
+    end
+
+    def process_message(json)
+      command = get_command json
+
+      if command
+        time = get_time json[json[command]]
+        response = send(protocol_method_name(command, json[command]), json[json[command]])
+        case response
+        when Array
+          response
+        when String
+          Response.new(response, time)
         end
       end
-      results.strip
     end
 
     def join(json)
@@ -309,8 +354,12 @@ module JsClient
 
       update_windows
 
-      @lastlog.each do |message|
-        display_text message
+      cols = get_window_size[0]
+      if @lastlog.size > 0
+        lastlog_start = cols > @lastlog.size ? @lastlog.size : cols
+        @lastlog[-lastlog_start..-1].each do |message|
+          display_text message[0], message[1]
+        end
       end
 
       @input_field.set_field_buffer(0, input)
@@ -467,17 +516,17 @@ module JsClient
       @windows[:input].refresh
     end
 
-    def show_message(messages)
+    def show_message(messages, time = Time.now.localtime)
       messages.split("\n").each do |message|
-        @lastlog << message.dup
+        @lastlog << [message.dup, time]
         @lastlog.shift if @lastlog.size > 250
-        display_text message
+        display_text message, time
       end
     end
 
-    def display_text(message)
+    def display_text(message, time = Time.now.localtime)
       message = message.dup
-      @windows[:text].addstr "#{Time.now.strftime('%H:%M')} "
+      @windows[:text].addstr "#{time.strftime('%H:%M')} "
 
       if message.match /^\*/
         @windows[:text].attrset(Ncurses.COLOR_PAIR(3))
@@ -598,10 +647,15 @@ Commands start with a forward slash.  Parameters in square brackets are optional
     data.split("\n").each do |line|
       json = JSON.parse(line.strip)
       # Execute the json
-      if json.has_key?('display') and @protocol.legal? json['display']
-        @keyboard.show_message @protocol.send(json['display'], json[json['display']])
-      elsif json.has_key?('change') and @protocol.legal_change? json['change']
-        @keyboard.show_message @protocol.send("change_#{json['change']}", json[json['change']])
+      protocol_response = @protocol.process_message json
+      if protocol_response
+        if protocol_response.kind_of? Array
+          protocol_response.each do |response|
+            @keyboard.show_message response.message, response.time
+          end
+        else
+          @keyboard.show_message protocol_response.message, protocol_response.time
+        end
       elsif json.has_key? 'notice'
         @keyboard.show_message "* #{json['notice']}"
       else
@@ -609,7 +663,6 @@ Commands start with a forward slash.  Parameters in square brackets are optional
       end
     end
   rescue Exception => exception
-    
     @keyboard.show_message "* [CLIENT ERROR] #{exception}"
   end
 
