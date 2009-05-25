@@ -229,7 +229,31 @@ module JsClient
 
       Signal.trap('SIGWINCH') do
         resize
+        resize
       end
+    end
+
+    def remove_windows_and_forms
+      remove_windows
+      remove_forms
+    end
+
+    def remove_windows
+      @windows.each do |name, window|
+        window.delete
+      end
+    end
+
+    def remove_forms
+      @input_field.free_field
+      @input_form.free_form
+    end
+
+    def update_windows
+      rows, cols = get_window_size
+      remove_windows_and_forms
+      display_windows
+      display_room_name
     end
 
     def display_windows
@@ -275,21 +299,24 @@ module JsClient
     end
 
     def resize
-      @windows.each do |window_name, window|
-        window.clear
-      end
+      # Save the user input
+      @input_form.form_driver Ncurses::Form::REQ_BEG_LINE
+      input = @input_field.field_buffer(0)
+      input.rstrip!
 
       Ncurses.def_prog_mode
       Ncurses.endwin
       Ncurses.reset_prog_mode
 
-      display_windows
-      display_time
-      display_room_name
+      update_windows
 
       @lastlog.each do |message|
         display_text message
       end
+
+      @input_field.set_field_buffer(0, input)
+      @windows[:input].addstr input
+      @input_form.form_driver Ncurses::Form::REQ_END_LINE
 
       Ncurses.refresh
     rescue Exception => exception
