@@ -229,7 +229,6 @@ module JsClient
 
       Signal.trap('SIGWINCH') do
         resize
-        resize
       end
     end
 
