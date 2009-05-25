@@ -13,7 +13,7 @@ var EmoteHelper = {
   insertEmotes: function(text) {
     var result = '';
     $A(text.split(/(:[^ ]*)/)).each(function(segment) {
-      if (segment.match(/^:/)) {
+      if (segment && segment.match(/^:/)) {
         segment = EmoteHelper.emoteToImage(segment);
       }
       result += segment;
