@@ -37,7 +37,7 @@ module JsChat
     end
 
     def self.valid_name?(name)
-      not name.match /[^[:alnum:]._\-\[\]^C]/
+      not name.match /[^[:alnum:]._\-\[\]^C]/ and name.size > 0
     end
 
     def private_message(message)

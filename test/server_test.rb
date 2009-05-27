@@ -64,6 +64,11 @@ class TestJsChat < Test::Unit::TestCase
     assert_equal 106, result['error']['code']
   end
 
+  def test_ensure_nicks_are_longer_than_0
+    result = JSON.parse identify_as('')
+    assert result['error']
+  end
+
   def test_ensure_nicks_are_unique
     identify_as 'alex'
 
