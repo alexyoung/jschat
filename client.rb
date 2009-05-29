@@ -65,6 +65,8 @@ module JsChat
       legal_change_commands.include? command
     end
 
+    def identified? ; @identified ; end
+
     def change_user(json)
       original_name = json['name'].keys().first
       new_name = json['name'].values.first
@@ -162,6 +164,8 @@ module JsChat
         @connection.send_join ClientConfig[:auto_join]
         @auto_joined = true
       end
+
+      @identified = true
 
       "* You are now known as #{json['name']}"
     end
@@ -643,7 +647,9 @@ Commands start with a forward slash.  Parameters in square brackets are optional
     end
   end
 
-  def receive_data(data)
+  include EM::Protocols::LineText2
+
+  def receive_line(data)
     data.split("\n").each do |line|
       json = JSON.parse(line.strip)
       # Execute the json
@@ -706,7 +712,11 @@ Commands start with a forward slash.  Parameters in square brackets are optional
   end
 
   def send_change_name(username)
-    send_data({ 'change' => 'user', 'user' => { 'name' => username } }.to_json + "\n")
+    if @protocol.identified?
+      send_data({ 'change' => 'user', 'user' => { 'name' => username } }.to_json + "\n")
+    else
+      send_identify username
+    end
   end
 
   def unbind
