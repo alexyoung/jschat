@@ -8,7 +8,7 @@ The *web app* has lots of interesting features:
 
 * IRC-like commands: /names, /name new_name (/nick works too), /clear, /lastlog
 * It's pretty tiny; it's built with "Sinatra":http://www.sinatrarb.com and "Prototype":http://prototypejs.org
-* Auto-linking: pasting an image displays it inline, youtube videos will appear as well
+* Auto-linking: pasting an image displays it inline, youtube and vimeo videos will appear as well
 * Last messages are displayed on join: the last 100 messages are displayed, so you don't feel lost when you join a room
 * Tab completion!
 
@@ -29,7 +29,7 @@ h3. Usage
 
 The web app must be run alongside the server.  The web app must be started in production mode:
 
-<code>http/chat.rb -e production</code>
+<code>http/jschat.rb -e production</code>
 
 The web app currently has no database dependencies, it's a wrapper that links cookies to JsChat server proxies.  You can run it on port 80 by configuring Rack or an Apache proxy.  I have Apache set up this way on "jschat.org":http://jschat.org.
 
