@@ -28,5 +28,20 @@ var LinkHelper = {
     } else {
       return this.link(url);
     }
+  },
+
+  vimeo_url: function(url) {
+    return url.match(/vimeo\.com/) && url.match(/\/\d+/);
+  },
+
+  vimeo: function(url) {
+    var vimeo_url_id = url.match(/\d+/);
+    if (vimeo_url_id) {
+      var vimeo_url = 'http://vimeo.com/' + vimeo_url_id;
+      var vimeo_html = '<object width="560" height="315"><param name="allowfullscreen" value="true" /><param name="allowscriptaccess" value="always" /><param name="movie" value="http://vimeo.com/moogaloop.swf?clip_id=' + vimeo_url_id + '&amp;server=vimeo.com&amp;show_title=0&amp;show_byline=0&amp;show_portrait=0&amp;color=969696&amp;fullscreen=1" /><embed src="http://vimeo.com/moogaloop.swf?clip_id=' + vimeo_url_id + '&amp;server=vimeo.com&amp;show_title=0&amp;show_byline=0&amp;show_portrait=0&amp;color=969696&amp;fullscreen=1" type="application/x-shockwave-flash" allowfullscreen="true" allowscriptaccess="always" width="560" height="315"></embed></object>';
+      return vimeo_html.interpolate({ movie_url: vimeo_url, url: vimeo_url });
+    } else {
+      return this.link(url);
+    }
   }
 };

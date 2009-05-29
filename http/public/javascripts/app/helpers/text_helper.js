@@ -74,6 +74,8 @@ var TextHelper = {
         } else {
           if (LinkHelper.youtube_url(link)) {
             result += link.replace(link, LinkHelper.youtube(link));
+          } else if (LinkHelper.vimeo_url(link)) {
+            result += link.replace(link, LinkHelper.vimeo(link));
           } else if (LinkHelper.image_url(link)) {
             result += link.replace(link, LinkHelper.image(link));
           } else if (LinkHelper.url(link)) {
