@@ -129,7 +129,9 @@ module JsChat
         puts "*** Server disconnected.  Count now: #{JsChat::Bridge.servers.size}"
       end
 
-      def receive_data(data)
+      include EM::Protocols::LineText2
+
+      def receive_line(data)
         data.split("\n").each do |line|
           json = {}
           begin

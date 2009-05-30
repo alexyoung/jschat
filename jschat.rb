@@ -327,7 +327,9 @@ module JsChat
     send_data response
   end
 
-  def receive_data(data)
+  include EM::Protocols::LineText2
+
+  def receive_line(data)
     response = ''
 
     if data and data.size > ServerConfig[:max_message_length]
