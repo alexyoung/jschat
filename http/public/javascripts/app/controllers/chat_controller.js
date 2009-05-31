@@ -54,9 +54,9 @@ JsChat.ChatController = Class.create({
           } else {
             new Ajax.Request('/message', {
               method: 'post',
-              parameters: { 'message': message, 'to': PageHelper.currentRoom() }
+              parameters: { 'message': message, 'to': PageHelper.currentRoom() },
+              onSuccess: this.updateMessages.bind(this)
             });
-            this.firePollers();
           }
         }
       }
