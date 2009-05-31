@@ -56,6 +56,7 @@ JsChat.ChatController = Class.create({
               method: 'post',
               parameters: { 'message': message, 'to': PageHelper.currentRoom() }
             });
+            this.firePollers();
           }
         }
       }
@@ -170,6 +171,10 @@ JsChat.ChatController = Class.create({
 
   stopPolling: function() {
     this.pollers.invoke('stop');
+  },
+
+  firePollers: function() {
+    this.pollers.invoke('execute');
   },
 
   startPolling: function() {
