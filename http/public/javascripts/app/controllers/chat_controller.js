@@ -55,8 +55,7 @@ JsChat.ChatController = Class.create({
             Display.message({ 'message': message, 'user': $('name').innerHTML }, true);
             new Ajax.Request('/message', {
               method: 'post',
-              parameters: { 'message': message, 'to': PageHelper.currentRoom() },
-              onSuccess: this.updateMessages.bind(this)
+              parameters: { 'message': message, 'to': PageHelper.currentRoom() }
             });
           }
         }
@@ -122,12 +121,7 @@ JsChat.ChatController = Class.create({
     JsChat.Request.get('/names');
   },
 
-  clearRealtime: function() {
-    $$('.clearme').invoke('remove');
-  },
-
   updateMessages: function() {
-    this.clearRealtime();
     new Ajax.Request('/messages', {
       method: 'get',
       parameters: { time: new Date().getTime(), room: PageHelper.currentRoom() },

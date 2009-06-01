@@ -411,10 +411,7 @@ post '/message' do
   load_bridge
   @bridge.server.connection.last_room = params['to']
   @bridge.server.send_message params['message'], params['to']
-  # Send messages back to the client
-  @bridge.server.connection.polled
-  @bridge.server.connection.last_room = params['room']
-  messages_js params['room']
+  'OK'
 end
 
 get '/user/name' do
