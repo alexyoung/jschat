@@ -680,7 +680,9 @@ Commands start with a forward slash.  Parameters in square brackets are optional
   end
 
   def switch_room(room)
-    @current_room = room 
+    @current_room = room
+    @keyboard.room_name = room 
+    @keyboard.display_room_name
     @keyboard.show_message "* Switched room to: #{room}"
   end
 
