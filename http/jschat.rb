@@ -73,6 +73,12 @@ module JsChat
 
       def save_messages(messages)
         @messages ||= {}
+
+        if messages.kind_of?(Hash) and messages['message'] and messages['message']['user'] == @name
+          # Ignore your own messages
+          return
+        end
+
         room = find_room(messages)
         room = last_room if room.nil?
         if room
@@ -219,8 +225,17 @@ module JsChat
     end
 
     def run
-      EM.run do
-        @connection = EM.connect '0.0.0.0', 6789, EventServer
+      # FIXME: For some reason Passenger/Rack requires this, EM.run blocks
+      # under Passenger but not when running outside of it
+      Thread.new do
+        EM.run do
+          @connection = EM.connect '0.0.0.0', 6789, EventServer
+        end
+      end
+
+      # This method will return before the connection has been set up
+      while @connection.nil?
+        sleep 0.1
       end
     end
 
