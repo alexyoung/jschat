@@ -1,4 +1,10 @@
 var UserCommands = {
+  '/emotes': function() {
+    var text = '';
+    Display.add_message('<strong>Available Emotes</strong> &mdash; Prefix with a : to use', 'help');
+    Display.add_message(EmoteHelper.legalEmotes.join(', '), 'help');
+  },
+
   '/help': function() {
     var help = [];
     Display.add_message('<strong>JsChat Help</strong> &mdash; Type the following commands into the message field:', 'help')
@@ -6,6 +12,7 @@ var UserCommands = {
     help.push(['/lastlog', 'Shows recent activity']);
     help.push(['/names', 'Refreshes the names list']);
     help.push(['/name new_name', 'Changes your name']);
+    help.push(['/emotes', 'Shoes available emotes']);
     $A(help).each(function(options) {
       var help_text = '<span class="command">#{command}</span><span class="command_help">#{text}</span>'.interpolate({ command: options[0], text: options[1]});
       Display.add_message(help_text, 'help');
