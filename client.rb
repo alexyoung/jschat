@@ -676,7 +676,7 @@ Commands start with a forward slash.  Parameters in square brackets are optional
     @current_room = room 
     @keyboard.room_name = room 
     @keyboard.display_room_name
-    send_data({ 'join' => room }.to_json)
+    send_data({ 'join' => room }.to_json + "\n")
   end
 
   def switch_room(room)
@@ -688,17 +688,17 @@ Commands start with a forward slash.  Parameters in square brackets are optional
 
   def send_part(room = nil)
     room = @current_room if room.nil?
-    send_data({ 'part' => room }.to_json)
+    send_data({ 'part' => room }.to_json + "\n")
   end
 
   def send_names(room = nil)
     room = @current_room if room.nil? or room.strip.empty?
-    send_data({ 'names' => room }.to_json)
+    send_data({ 'names' => room }.to_json + "\n")
   end
 
   def send_lastlog(room = nil)
     room = @current_room if room.nil? or room.strip.empty?
-    send_data({ 'lastlog' => room }.to_json)
+    send_data({ 'lastlog' => room }.to_json + "\n")
   end
 
   def send_message(line)
