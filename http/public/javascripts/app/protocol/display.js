@@ -1,8 +1,16 @@
 var Display = {
+  scrolled: false,
+
   add_message: function(text, className, time) {
     var time_html = '<span class="time">\#{time}</span>'.interpolate({ time: TextHelper.dateText(time) });
     $('messages').insert({ bottom: '<li class="' + className + '">' + time_html + ' ' + text + '</li>' });
     this.scrollMessagesToTop();
+  },
+
+  addImageOnLoads: function() {
+    $$('#messages li').last().select('img').each(function(element) {
+        element.observe('load', this.scrollMessagesToTop);
+    }.bind(this));
   },
 
   message: function(message) {
@@ -18,6 +26,8 @@ var Display = {
 
     text = text.interpolate({ user_class: user_class, room: message['room'], user: TextHelper.truncateName(message['user']), message: TextHelper.decorateMessage(message['message']), message_class: 'message' });
     this.add_message(text, 'message', message['time']);
+
+    this.addImageOnLoads();
 
     if (this.show_unread) {
       this.unread++;
@@ -48,7 +58,9 @@ var Display = {
   },
 
   scrollMessagesToTop: function() {
-    $('messages').scrollTop = $('messages').scrollHeight;   
+    if (!this.scrolled) {
+      $('messages').scrollTop = $('messages').scrollHeight;
+    }
   },
 
   clearIdleState: function(user_name) {

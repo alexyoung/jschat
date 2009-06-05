@@ -11,6 +11,11 @@ JsChat.ChatController = Class.create({
     Event.observe(window, 'resize', this.resizeEvent.bindAsEventListener(this));
 
     $('post_message').observe('submit', this.postMessageFormEvent.bindAsEventListener(this));
+    $('messages').observe('scroll', this.messagesScrolled.bindAsEventListener(this));
+  },
+
+  messagesScrolled: function() {
+    Display.scrolled = (($('messages').scrollHeight - $('messages').scrollTop) > $('messages').getHeight());
   },
 
   focusEvent: function() {
