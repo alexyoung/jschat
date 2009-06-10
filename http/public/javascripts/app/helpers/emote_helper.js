@@ -1,5 +1,5 @@
 var EmoteHelper = {
-  legalEmotes: ['angry', 'arr', 'blink', 'blush', 'brucelee', 'btw', 'chuckle', 'clap', 'cool', 'drool', 'drunk', 'dry', 'eek', 'flex', 'happy', 'huh', 'laugh', 'lol', 'mad', 'mellow', 'noclue', 'oh', 'ohmy', 'ph34r', 'pimp', 'punch', 'realmad', 'rock', 'rofl', 'rolleyes', 'sad', 'scratch', 'shifty', 'shock', 'shrug', 'sleep', 'sleeping', 'smile', 'suicide', 'sweat', 'thumbs', 'tongue', 'unsure', 'w00t', 'wacko', 'whistling', 'wink', 'worship', 'yucky'],
+  legalEmotes: ['angry', 'arr', 'blink', 'blush', 'brucelee', 'btw', 'chuckle', 'clap', 'cool', 'drool', 'drunk', 'dry', 'eek', 'flex', 'happy', 'holmes', 'huh', 'laugh', 'lol', 'mad', 'mellow', 'noclue', 'oh', 'ohmy', 'ph34r', 'pimp', 'punch', 'realmad', 'rock', 'rofl', 'rolleyes', 'sad', 'scratch', 'shifty', 'shock', 'shrug', 'sleep', 'sleeping', 'smile', 'suicide', 'sweat', 'thumbs', 'tongue', 'unsure', 'w00t', 'wacko', 'whistling', 'wink', 'worship', 'yucky'],
 
   emoteToImage: function(emote) {
     var result = emote;
