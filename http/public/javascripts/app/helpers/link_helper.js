@@ -8,7 +8,7 @@ var LinkHelper = {
   },
 
   image_url: function(url) {
-    return url.match(/(jp?g|png|gif)/i);
+    return url.match(/\.(jpe?g|png|gif)/i);
   },
 
   image: function(url) {
