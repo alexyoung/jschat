@@ -12,7 +12,7 @@ var UserCommands = {
     help.push(['/lastlog', 'Shows recent activity']);
     help.push(['/names', 'Refreshes the names list']);
     help.push(['/name new_name', 'Changes your name']);
-    help.push(['/emotes', 'Shoes available emotes']);
+    help.push(['/emotes', 'Shows available emotes']);
     $A(help).each(function(options) {
       var help_text = '<span class="command">#{command}</span><span class="command_help">#{text}</span>'.interpolate({ command: options[0], text: options[1]});
       Display.add_message(help_text, 'help');
