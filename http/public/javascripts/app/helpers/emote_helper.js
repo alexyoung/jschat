@@ -3,7 +3,7 @@ var EmoteHelper = {
 
   emoteToImage: function(emote) {
     var result = emote;
-    emote = emote.replace(/^:/, '');
+    emote = emote.replace(/^:/, '').toLowerCase();
     if (EmoteHelper.legalEmotes.find(function(v) { return v == emote })) {
       result = '<img src="/images/emoticons/#{emote}.gif" alt="#{description}" />'.interpolate({ emote: emote, description: emote });
     }
