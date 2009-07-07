@@ -62,3 +62,5 @@ JsChat was created by "Alex Young":http://alexyoung.org for "Helicoid":http://he
 * Kevin Ford
 
 If you'd like to contribute, send "alexyoung":http://github.com/alexyoung a message on GitHub.
+
+I TYPE GREAT!
