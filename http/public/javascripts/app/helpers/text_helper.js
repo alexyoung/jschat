@@ -25,7 +25,6 @@ var TextHelper = {
   },
 
   decorateMessage: function(text) {
-    text = text.escapeHTML();
     return EmoteHelper.insertEmotes(this.autoLink(this.textilize(text)));
   },
 

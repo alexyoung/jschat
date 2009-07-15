@@ -57,7 +57,7 @@ JsChat.ChatController = Class.create({
           if (message.match(/^\//)) {
             Display.add_message('Error: Command not found.  Use /help display commands.', 'error');
           } else {
-            Display.message({ 'message': message, 'user': $('name').innerHTML }, true);
+            Display.message({ 'message': message.escapeHTML(), 'user': $('name').innerHTML }, true);
             new Ajax.Request('/message', {
               method: 'post',
               parameters: { 'message': message, 'to': PageHelper.currentRoom() }
