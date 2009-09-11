@@ -17,6 +17,10 @@ end
 class JsChatMock
   include JsChat
 
+  def get_remote_ip
+    ''
+  end
+
   def send_data(data)
     data
   end

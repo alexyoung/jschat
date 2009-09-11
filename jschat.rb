@@ -2,6 +2,7 @@ require 'rubygems'
 require 'eventmachine'
 require 'json'
 require 'time'
+require 'socket'
 
 # JsChat libraries
 require 'lib/errors'
@@ -11,7 +12,7 @@ module JsChat
   class User
     include JsChat::FloodProtection
 
-    attr_accessor :name, :connection, :rooms, :last_activity, :identified
+    attr_accessor :name, :connection, :rooms, :last_activity, :identified, :ip
 
     def initialize(connection)
       @name = nil
@@ -19,6 +20,7 @@ module JsChat
       @rooms = []
       @last_activity = Time.now.utc
       @identified = false
+      @ip = ''
     end
 
     def to_json
@@ -190,13 +192,14 @@ module JsChat
   end
 
   # {"identify":"alex"}
-  def identify(name, options = {})
+  def identify(name, ip, options = {})
     if @user and @user.identified
       Error.new :already_identified, 'You have already identified'
     elsif name_taken? name
       Error.new :name_taken, 'Name already taken'
     else
       @user.name = name
+      @user.ip   = ip
       { 'display' => 'identified', 'identified' => @user }
     end
   rescue JsChat::Errors::InvalidName => exception
@@ -293,7 +296,7 @@ module JsChat
   def log(level, message)
     if Object.const_defined? :ServerConfig and ServerConfig[:logger]
       if @user
-        message = "#{@user.name}: #{message}"
+        message = "#{@user.name} (#{@user.ip}): #{message}"
       end
       ServerConfig[:logger].send level, message
     end
@@ -329,6 +332,10 @@ module JsChat
 
   include EM::Protocols::LineText2
 
+  def get_remote_ip
+    Socket.unpack_sockaddr_in(get_peername)[1]
+  end
+
   def receive_line(data)
     response = ''
 
@@ -343,7 +350,8 @@ module JsChat
       @user.seen!
 
       if input.has_key? 'identify'
-        response << send_response(identify(input['identify']))
+        input['ip'] ||= get_remote_ip
+        response << send_response(identify(input['identify'], input['ip']))
       else
         ['lastlog', 'change', 'send', 'join', 'names', 'part'].each do |command|
           if @user.name.nil?

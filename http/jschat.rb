@@ -212,8 +212,8 @@ module JsChat
       @connection.close_connection
     end
 
-    def identify(name)
-      @connection.send_data({'identify' => name}.to_json + "\n")
+    def identify(name, ip)
+      @connection.send_data({'identify' => name, 'ip' => ip}.to_json + "\n")
     end
 
     def identified?
@@ -341,7 +341,7 @@ end
 
 post '/identify' do
   load_or_create_bridge
-  @bridge.server.identify params['name']
+  @bridge.server.identify params['name'], request.ip
   @bridge.server.connection.last_room = params['room']
   redirect '/identify-pending'
 end
