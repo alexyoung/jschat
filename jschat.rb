@@ -12,13 +12,15 @@ module JsChat
   class User
     include JsChat::FloodProtection
 
-    attr_accessor :name, :connection, :rooms, :last_activity, :identified, :ip
+    attr_accessor :name, :connection, :rooms, :last_activity,
+                  :identified, :ip, :last_poll
 
     def initialize(connection)
       @name = nil
       @connection = connection
       @rooms = []
       @last_activity = Time.now.utc
+      @last_poll = Time.now.utc
       @identified = false
       @ip = ''
     end
@@ -96,8 +98,24 @@ module JsChat
       room
     end
 
-    def lastlog
-      { 'display' => 'messages', 'messages' => @messages }
+    def lastlog(since = nil)
+      { 'display' => 'messages', 'messages' => messages_since(since) }
+    end
+
+    def messages_since(since)
+      if since.nil?
+        @messages
+      else
+        @messages.select { |m| message_time(m) > since }
+      end
+    end
+
+    def message_time(message)
+      if message.has_key? 'display'
+        message[message['display']]['time']
+      elsif message.has_key? 'change'
+        message[message['change']]['time']
+      end
     end
 
     def add_to_lastlog(message)
@@ -209,7 +227,6 @@ module JsChat
 
   def lastlog(room, options = {})
     room = Room.find room
-
     if room and room.users.include? @user
       room.lastlog
     else
@@ -217,9 +234,28 @@ module JsChat
     end
   end
 
+  def since(room, options = {})
+    room = Room.find room
+    if room and room.users.include? @user
+      response = room.lastlog(@user.last_poll)
+      @user.last_poll = Time.now.utc
+      response
+    else
+      Error.new(:not_in_room, "Please join this room first")
+    end
+  end
+
+  def ping(message, options = {})
+    if @user and @user.last_poll and Time.now.utc > @user.last_poll
+      { 'pong' => Time.now.utc }
+    else
+      # TODO: HANDLE PING OUTS
+      Error.new(:ping_out, 'Your connection has been lost')
+    end
+  end
+
   def room_message(message, options)
     room = Room.find options['to']
-
     if room and room.users.include? @user
       room.send_message({ 'message' => message, 'user' => @user.name, 'time' => Time.now.utc })
     else
@@ -229,7 +265,6 @@ module JsChat
 
   def private_message(message, options)
     user = users_with_names.find { |u| u.name.downcase == options['to'].downcase }
-
     if user
       # Return the message to the user, and send it to the other person too
       now = Time.now.utc
@@ -313,7 +348,7 @@ module JsChat
     return if @stateless
 
     # TODO: Remove user from rooms and remove connection
-    puts "Removing a connection"
+    log :info, "Removing a connection"
     Room.find(@user).each do |room|
       room.quit_notice @user
     end
@@ -400,7 +435,7 @@ module JsChat
         input['ip'] ||= get_remote_ip
         response << send_response(identify(input['identify'], input['ip']))
       else
-        ['lastlog', 'change', 'send', 'join', 'names', 'part'].each do |command|
+        ['lastlog', 'change', 'send', 'join', 'names', 'part', 'since', 'ping'].each do |command|
           if @user.name.nil?
             response << send_response(Error.new(:identity_required, "Identify first"))
             return response

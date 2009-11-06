@@ -104,8 +104,13 @@ JsChat.ChatController = Class.create({
         new Ajax.Request('/lastlog', {
           method: 'get',
           parameters: { time: new Date().getTime(), room: PageHelper.currentRoom() },
-          onFailure: function() { Display.add_message("Error: Couldn't join channel", 'server'); $('loading').hide(); },
-          onComplete: function() { setTimeout(this.updateNames.bindAsEventListener(this), 250); document.title = PageHelper.title(); }.bind(this)
+          onFailure: function() {
+            Display.add_message("Error: Couldn't join channel", 'server'); $('loading').hide(); },
+          onComplete: function(transport) {
+            this.showMessagesResponse(transport);
+            setTimeout(this.updateNames.bindAsEventListener(this), 250);
+            document.title = PageHelper.title();
+          }.bind(this)
         });
       }.bind(this)
     });
@@ -126,21 +131,25 @@ JsChat.ChatController = Class.create({
     JsChat.Request.get('/names');
   },
 
+  showMessagesResponse: function(transport) {
+    try {
+      this.displayMessages(transport.responseText);
+
+      if ($$('#messages li').length > 1000) {
+        $$('#messages li').slice(0, 500).invoke('remove');
+      }
+    } catch (exception) {
+      console.log(transport.responseText);
+      console.log(exception);
+    }
+  },
+
   updateMessages: function() {
     new Ajax.Request('/messages', {
       method: 'get',
       parameters: { time: new Date().getTime(), room: PageHelper.currentRoom() },
       onSuccess: function(transport) {
-        try {
-          this.displayMessages(transport.responseText);
-
-          if ($$('#messages li').length > 1000) {
-            $$('#messages li').slice(0, 500).invoke('remove');
-          }
-        } catch (exception) {
-          console.log(transport.responseText);
-          console.log(exception);
-        }
+        this.showMessagesResponse(transport);
       }.bind(this),
       onFailure: function(request) {
         this.stopPolling();

@@ -1,293 +1,96 @@
 require 'rubygems'
 require 'sinatra'
 require 'sha1'
-require 'eventmachine'
 require 'json'
 require 'sprockets'
 
 set :public, Proc.new { File.join(root, 'public') }
 set :views, Proc.new { File.join(root, 'views') }
 
-puts "*** Must be run in production mode (-e production)"
-
 module JsChat
-  class Server
-    attr_reader :connection
+  Config = {
+    :ip   => '0.0.0.0',
+    :port => 6789
+  }
 
-    def initialize(cookie)
-      @cookie = cookie
-      run
-    end
+  class ConnectionError < Exception ; end
+end
 
-    module EventServer
-      include Rack::Utils
-      alias_method :h, :escape_html
+# todo: can this be async and allow the server to have multiple threads? 
+class JsChat::Bridge
+  attr_reader :cookie, :identification_error, :last_error
 
-      def post_init
-        @identified = false
-        @messages = {}
-        @disconnected = false
-        @identification_error = nil
+  def initialize(cookie = nil)
+    @cookie = cookie
+  end
 
-        watch_timeout
-      end
+  def cookie_set?
+    !(@cookie.nil? or @cookie.empty?)
+  end
 
-      def polled
-        @last_poll = Time.now
-      end
+  def connect
+    response = send_json({ :protocol => 'stateless' })
+    @cookie = response['cookie']
+  end
 
-      def watch_timeout
-        @last_poll = Time.now
-
-        Thread.new do
-          loop do
-            if Time.now - @last_poll > 120
-              puts "TIMEOUT"
-              close_connection
-              return
-            end
-            sleep 120
-          end
-        end
-      end
-
-      def identification_error
-        @identification_error
-      end
-
-      def identified?
-        @identified
-      end
-
-      def messages(room)
-        @messages ||= {}
-        @messages[room] ||= []
-        @messages[room]
-      end
-
-      def clear_messages(room)
-        @messages ||= {}
-        @messages[room] ||= []
-        @messages[room].clear
-      end
-
-      def save_messages(messages)
-        @messages ||= {}
-
-        if messages.kind_of?(Hash) and messages['message'] and messages['message']['user'] == @name
-          # Ignore your own messages
-          return
-        end
-
-        room = find_room(messages)
-        room = last_room if room.nil?
-        if room
-          @messages[room] ||= []
-          @messages[room] << sanitize_json(messages).to_json
-        end
-      end
-
-      # This searches messages for a room name reference
-      # It's currently assumed that server responses are per-room,
-      # rather than a set of messages for multiple rooms
-      def find_room(messages)
-        if messages.kind_of? Array
-          messages.each do |message|
-            room_name = extract_room_name(message)
-            return room_name if room_name
-          end
-        elsif messages.kind_of? Hash
-          return extract_room_name(messages)
-        end
-        return false
-      end
-
-      def extract_room_name(message)
-        room_name = nil
-        message.each do |field, value|
-          if field == 'room'
-            room_name = value
-            true
-          elsif field == 'to'
-            room_name = value
-            true
-          elsif value.kind_of? Hash
-            room_name = extract_room_name(value)
-          elsif value.kind_of? Array
-            room_name = find_room value
-          end
-          return room_name if room_name
-        end
-        nil
-      end
-
-      def last_room=(room)
-        @last_room = room
-      end
-
-      def last_room ; @last_room ; end
-      def disconnected? ; @disconnected ; end
-
-      def unbind
-        puts "*** Server disconnecting.  Count now: #{JsChat::Bridge.servers.size}"
-        JsChat::Bridge.servers.delete_if { |hash, server| server.connection == self }
-        @disconnected = true
-        puts "*** Server disconnected.  Count now: #{JsChat::Bridge.servers.size}"
-      end
-
-      include EM::Protocols::LineText2
-
-      def receive_line(data)
-        data.split("\n").each do |line|
-          json = {}
-          begin
-            json = JSON.parse(line)
-          rescue JSON::ParserError
-            puts "Error parsing:"
-            p line
-            return
-          end
-
-          puts "LINE FROM SERVER: #{line}"
-
-          if @identified == false and json['identified']
-            @identified = true
-            @name = json['identified']['name']
-          elsif @identified == false and json['display'] == 'error'
-            @identification_error = json
-          elsif @identified
-            save_messages json
-            update_name_on_name_change json
-          end
-        end
-      end
-
-      def changing_my_name?(json)
-        json['change'] and json['user'] and json['user']['name'] and json['user']['name'].keys.first == @name
-      end
-
-      def update_name_on_name_change(json)
-        return if json.nil? or json.empty?
-        if changing_my_name? json
-          @name = json['user']['name'].values.first 
-        end
-      end
-
-      def name ; @name ; end
-
-      def names(room)
-        send_data({'names' => room}.to_json + "\n")
-      end
-
-      def lastlog(room)
-        send_data({'lastlog' => room}.to_json + "\n")
-      end
-
-      def join(room)
-        send_data({'join' => room}.to_json + "\n")
-      end
-
-      def sanitize_json(json)
-        # Sanitize output
-        json.each do |field, value|
-          if value.kind_of? String
-            json[field] = h value
-          elsif value.kind_of? Hash
-            json[field] = sanitize_json(value)
-          elsif value.kind_of? Array
-            json[field] = value.collect do |v|
-              if v.kind_of? String
-                h v
-              else
-                sanitize_json(v)
-              end
-            end
-          end
-        end
-        json
-      end
-    end
-
-    def quit
-      @connection.close_connection
-    end
-
-    def identify(name, ip)
-      @connection.send_data({'identify' => name, 'ip' => ip}.to_json + "\n")
-    end
-
-    def identified?
-      @connection.identified?
-    end
-
-    def change(change_type, data)
-      @connection.send_data({ 'change' => change_type, change_type => data }.to_json + "\n")
-    end
-
-    def run
-      # FIXME: For some reason Passenger/Rack requires this, EM.run blocks
-      # under Passenger but not when running outside of it
-      Thread.new do
-        EM.run do
-          @connection = EM.connect '0.0.0.0', 6789, EventServer
-        end
-      end
-
-      # This method will return before the connection has been set up
-      while @connection.nil?
-        sleep 0.1
-      end
-    end
-
-    def recent_messages(room)
-      messages = @connection.messages(room).dup
-      @connection.clear_messages(room)
-      messages
-    end
-    
-    def send_message(message, room)
-      @connection.send_data({ 'to' => room, 'send' => message }.to_json + "\n")
+  def identify(name, ip)
+    response = send_json({ :identify => name, :ip => ip })
+    if response['display'] == 'error'
+      @identification_error = response
+      false
+    else
+      true
     end
   end
 
-  class Bridge
-    @@servers = {}
-    attr_accessor :name, :server
+  def lastlog(room)
+    response = send_json({ :lastlog => room })
+    response['messages']
+  end
 
-    def initialize(cookie)
-      @cookie = cookie
-      @server = @@servers[@cookie]
-    end
+  def recent_messages(room)
+    send_json({ 'since' => room })['messages']
+  end
 
-    def self.servers
-      @@servers
-    end
+  def join(room)
+    send_json({ :join => room }, false)
+  end
 
-    def self.find_server(cookie)
-      @@servers[cookie]
-    end
+  def send_message(message, to)
+    send_json({ :send => message, :to => to }, false)
+  end
 
-    def self.new_cookie
-      SHA1.hexdigest Time.now.usec.to_s
+  def active?
+    return false unless cookie_set?
+    response = send_json({ 'ping' => Time.now.utc })
+    if response.nil? or response['display'] == 'error'
+      @last_error = response
+      false
+    else
+      true
     end
+  end
 
-    def self.new_server(cookie)
-      server = Server.new cookie
-      @@servers[cookie] = server
-    end
+  def change(change_type, data)
+    response = send_json({ 'change' => change_type, change_type => data })
+  end
 
-    def recent_messages(room)
-      @server.recent_messages(room)
-    end
+  def names(room)
+    send_json({'names' => room}, false)
+  end
 
-    def setup_connection
-      if @@servers[@cookie]
-        @server = @@servers[@cookie]
-      else
-        Bridge.new_server(@cookie)
-        @server = @@servers[@cookie]
-      end
+  def send_json(h, get_results = true)
+    response = nil
+    h[:cookie] = @cookie if cookie_set?
+    c = TCPSocket.open(JsChat::Config[:ip], JsChat::Config[:port])
+    c.send(h.to_json + "\n", 0)
+    if get_results
+      response = c.gets
+      response = JSON.parse(response)
     end
+  ensure
+    c.close
+    response
   end
 end
 
@@ -304,26 +107,40 @@ helpers do
   end
 
   def load_bridge
-    cookie = request.cookies['jschat-id']
-    JsChat::Bridge.find_server cookie
-    @bridge = JsChat::Bridge.new(cookie) 
+    @bridge = JsChat::Bridge.new request.cookies['jschat-id']
   end
 
-  def load_or_create_bridge
-    cookie = request.cookies['jschat-id']
-
-    if cookie.nil? or cookie.empty?
-      cookie = JsChat::Bridge.new_cookie
-      response.set_cookie 'jschat-id', cookie
-      JsChat::Bridge.new_server cookie
-    end
-
-    @bridge = JsChat::Bridge.new(cookie) 
-    @bridge.setup_connection
+  def load_and_connect
+    @bridge = JsChat::Bridge.new request.cookies['jschat-id']
+    @bridge.connect
+    response.set_cookie 'jschat-id', @bridge.cookie
   end
 
-  def messages_js(room)
-    '[' + @bridge.recent_messages(room).join(", ") + ']';
+  def save_last_room(room)
+    response.set_cookie 'last-room', room
+  end
+
+  def last_room
+    request.cookies['last-room']
+  end
+
+  def save_nickname(name)
+    response.set_cookie 'jschat-name', name
+  end
+
+  def messages_js(messages)
+    messages ||= []
+    messages.delete_if { |message| message['message'] and message['message']['user'] == nickname }
+    messages.to_json
+  end
+
+  def clear_cookies
+    response.set_cookie 'last-room', nil
+    response.set_cookie 'jschat-id', nil
+  end
+
+  def nickname
+    request.cookies['jschat-name']
   end
 end
 
@@ -331,76 +148,61 @@ end
 get '/' do
   load_bridge
 
-  if @bridge and @bridge.server and @bridge.server.connection.last_room
-    redirect "/chat/#{@bridge.server.connection.last_room}" 
+  if @bridge.active? and last_room
+    redirect "/chat/#{last_room}" 
   else
-    response.set_cookie 'jschat-id', ''
+    clear_cookies
     erb :index, :layout => detected_layout
   end
 end
 
 post '/identify' do
-  load_or_create_bridge
-  @bridge.server.identify params['name'], request.ip
-  @bridge.server.connection.last_room = params['room']
-  redirect '/identify-pending'
+  load_and_connect
+  save_last_room params['room']
+  save_nickname params['name']
+  if @bridge.identify params['name'], request.ip
+    { 'action' => 'redirect', 'to' => "/chat/#{params['room']}" }.to_json
+  else
+    @bridge.identification_error.to_json
+  end
 end
 
 post '/change-name' do
   load_bridge
-  @bridge.server.change 'user', { 'name' => params['name'] }
-end
-
-# Invalid nick names should be handled using Ajax
-get '/identify-pending' do
-  load_bridge
-
-  if @bridge.server.identified?
-    { 'action' => 'redirect', 'to' => "/chat/#{@bridge.server.connection.last_room}" }.to_json
-  elsif @bridge.server.connection.identification_error
-    @bridge.server.connection.identification_error.to_json
-  else
-    # Waiting for a response
-    { 'action' => 'reload' }.to_json
-  end
+  save_nickname params['name']
+  @bridge.change 'user', { 'name' => params['name'] }  
 end
 
 get '/messages' do
   load_bridge
-  if @bridge.nil? or @bridge.server.nil?
-    raise "Lost bridge connection"
-  else
-    @bridge.server.connection.polled
-    @bridge.server.connection.last_room = params['room']
-    messages_js params['room']
-  end
+  @bridge.active?
+  save_last_room params['room']
+  messages_js @bridge.recent_messages(params['room'])
 end
 
 get '/names' do
   load_bridge
-  @bridge.server.connection.names params['room']
-  @bridge.server.connection.last_room = params['room']
+  @bridge.names params['room']
+  save_last_room params['room']
   "Request OK"
 end
 
 get '/lastlog' do
   load_bridge
-  @bridge.server.connection.lastlog params['room']
-  @bridge.server.connection.last_room = params['room']
-  "Request OK"
+  save_last_room params['room']
+  messages_js @bridge.lastlog(params['room'])
 end
 
 post '/join' do
   load_bridge
-  @bridge.server.connection.join(params['room'])
-  @bridge.server.connection.last_room = params['room']
+  @bridge.join params['room']
+  save_last_room params['room']
   "Request OK"
 end
 
 get '/chat/' do
   load_bridge
-
-  if @bridge and @bridge.server and @bridge.server.identified?
+  if @bridge and @bridge.active?
     erb :message_form, :layout => detected_layout
   else
     erb :index, :layout => detected_layout
@@ -409,21 +211,20 @@ end
 
 post '/message' do
   load_bridge
-  @bridge.server.connection.last_room = params['to']
-  @bridge.server.send_message params['message'], params['to']
+  save_last_room params['room']
+  @bridge.send_message params['message'], params['to']
   'OK'
 end
 
 get '/user/name' do
   load_bridge
-  @bridge.server.connection.name
+  nickname
 end
 
 get '/quit' do
   load_bridge
-  if @bridge and @bridge.server
-    @bridge.server.quit
-  end
+  # TODO: Disconnect on client end
+  clear_cookies
   redirect '/'
 end
 

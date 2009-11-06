@@ -32,7 +32,8 @@ module JsChat
       301 => :message_too_long,
       # 5xx: Other errors
       500 => :invalid_request,
-      501 => :flooding
+      501 => :flooding,
+      502 => :ping_out
     }
   end
 end
