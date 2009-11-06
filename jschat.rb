@@ -200,6 +200,7 @@ module JsChat
     else
       @user.name = name
       @user.ip   = ip
+      register_stateless_user if @stateless
       { 'display' => 'identified', 'identified' => @user }
     end
   rescue JsChat::Errors::InvalidName => exception
@@ -276,7 +277,41 @@ module JsChat
     end
   end
 
+  def new_cookie
+    chars = ("a".."z").to_a + ("1".."9").to_a 
+    Array.new(8, '').collect { chars[rand(chars.size)] }.join
+  end
+
+  def register_stateless_cient
+    @stateless_cookie = new_cookie
+    user = User.new(self)
+    @@stateless_cookies << { :cookie => @stateless_cookie, :user => user }
+    @@users << user
+    { 'cookie' => @stateless_cookie }
+  end
+
+  def current_stateless_client
+    @@stateless_cookies.find { |c| c[:cookie] == @stateless_cookie }
+  end
+
+  def register_stateless_user
+    current_stateless_client[:user] = @user
+  end
+
+  def valid_stateless_user?
+    current_stateless_client 
+  end
+
+  def load_stateless_user
+    if client = current_stateless_client
+      @user = client[:user]
+      @stateless = true
+    end
+  end
+
   def unbind
+    return if @stateless
+
     # TODO: Remove user from rooms and remove connection
     puts "Removing a connection"
     Room.find(@user).each do |room|
@@ -289,6 +324,7 @@ module JsChat
 
   def post_init
     @@users ||= []
+    @@stateless_cookies ||= []
     @user = User.new(self)
     @@users << @user
   end
@@ -349,7 +385,18 @@ module JsChat
 
       @user.seen!
 
-      if input.has_key? 'identify'
+      # Unbind when a stateless connection doesn't match the cookie
+      if input.has_key?('cookie')
+        @stateless_cookie = input['cookie']
+        load_stateless_user
+      end
+
+      if input.has_key? 'protocol'
+        if input['protocol'] == 'stateless'
+          @stateless = true
+          response << send_response(register_stateless_cient)
+        end
+      elsif input.has_key? 'identify'
         input['ip'] ||= get_remote_ip
         response << send_response(identify(input['identify'], input['ip']))
       else

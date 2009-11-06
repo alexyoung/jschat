@@ -1,48 +1,8 @@
-require 'test/unit'
-require 'rubygems'
-require 'eventmachine'
-require 'json'
-require File.join(File.dirname(__FILE__), '../', 'jschat.rb')
-
-ServerConfig = {
-  :max_message_length => 500
-}
-
-class JsChat::Room
-  def self.reset
-    @@rooms = nil
-  end
-end
-
-class JsChatMock
-  include JsChat
-
-  def get_remote_ip
-    ''
-  end
-
-  def send_data(data)
-    data
-  end
-
-  def reset
-    @@users = nil
-    @user = nil
-    Room.reset
-  end
-
-  # Helper for testing
-  def add_user(name, room_name)
-    room = Room.find_or_create room_name
-    user = User.new self
-    user.name = name
-    user.rooms << room
-    @@users << user
-    room.users << user
-  end
-end
+require 'test_helper'
 
 class TestJsChat < Test::Unit::TestCase
+  include JsChatHelpers
+
   def setup
     @jschat = JsChatMock.new
     @jschat.post_init
@@ -211,12 +171,5 @@ class TestJsChat < Test::Unit::TestCase
     assert_match /wait a few seconds/i, response['error']['message']
   end
 
-  private
-
-    def identify_as(name, channel = nil)
-      result = @jschat.receive_line({ 'identify' => name }.to_json)
-      result = @jschat.receive_line({ 'join' => channel }.to_json) if channel
-      result
-    end
 end
 
