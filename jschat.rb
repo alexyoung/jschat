@@ -9,6 +9,8 @@ require 'lib/errors'
 require 'lib/flood_protection'
 
 module JsChat
+  STATELESS_TIMEOUT = 60
+
   class User
     include JsChat::FloodProtection
 
@@ -247,7 +249,8 @@ module JsChat
 
   def ping(message, options = {})
     if @user and @user.last_poll and Time.now.utc > @user.last_poll
-      { 'pong' => Time.now.utc }
+      time = Time.now.utc
+      { 'pong' => time }
     else
       # TODO: HANDLE PING OUTS
       Error.new(:ping_out, 'Your connection has been lost')
@@ -341,20 +344,34 @@ module JsChat
     if client = current_stateless_client
       @user = client[:user]
       @stateless = true
+    else
+      raise JsChat::Errors::InvalidCookie.new(:invalid_cookie, 'Invalid cookie')
     end
+  end
+
+  def disconnect_lagged_users
+    @@stateless_cookies.delete_if do |cookie|
+      lagged?(cookie[:user].last_poll) ? disconnect_user(cookie[:user]) && true : false
+    end
+  end
+
+  def lagged?(time)
+    Time.now.utc - time > STATELESS_TIMEOUT
   end
 
   def unbind
     return if @stateless
+    disconnect_user(@user)
+    @user = nil
+  end
 
-    # TODO: Remove user from rooms and remove connection
+  def disconnect_user(user)
     log :info, "Removing a connection"
-    Room.find(@user).each do |room|
-      room.quit_notice @user
+    Room.find(user).each do |room|
+      room.quit_notice user
     end
 
-    @@users.delete_if { |user| user == @user }
-    @user = nil
+    @@users.delete_if { |u| u == user }
   end
 
   def post_init
@@ -409,6 +426,7 @@ module JsChat
 
   def receive_line(data)
     response = ''
+    disconnect_lagged_users
 
     if data and data.size > ServerConfig[:max_message_length]
       raise JsChat::Errors::MessageTooLong.new(:message_too_long, 'Message too long')
@@ -461,6 +479,8 @@ module JsChat
   rescue JsChat::Errors::Flooding => exception
     send_response exception
   rescue JsChat::Errors::MessageTooLong => exception
+    send_response exception
+  rescue JsChat::Errors::InvalidCookie => exception
     send_response exception
   rescue Exception => exception
     puts "Data that raised exception: #{exception}"

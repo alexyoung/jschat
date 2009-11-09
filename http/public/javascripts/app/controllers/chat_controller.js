@@ -107,6 +107,7 @@ JsChat.ChatController = Class.create({
           onFailure: function() {
             Display.add_message("Error: Couldn't join channel", 'server'); $('loading').hide(); },
           onComplete: function(transport) {
+            $('loading').hide();
             this.showMessagesResponse(transport);
             setTimeout(this.updateNames.bindAsEventListener(this), 250);
             document.title = PageHelper.title();

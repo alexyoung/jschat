@@ -130,8 +130,12 @@ helpers do
 
   def messages_js(messages)
     messages ||= []
-    messages.delete_if { |message| message['message'] and message['message']['user'] == nickname }
     messages.to_json
+  end
+
+  def remove_my_messages(messages)
+    return if messages.nil?
+    messages.delete_if { |message| message['message'] and message['message']['user'] == nickname }
   end
 
   def clear_cookies
@@ -175,9 +179,16 @@ end
 
 get '/messages' do
   load_bridge
-  @bridge.active?
-  save_last_room params['room']
-  messages_js @bridge.recent_messages(params['room'])
+  if @bridge.active?
+    save_last_room params['room']
+    messages_js remove_my_messages(@bridge.recent_messages(params['room']))
+  else
+    if @bridge.last_error and @bridge.last_error['error']['code'] == 107
+      error 500, [@bridge.last_error].to_json 
+    else
+      [@bridge.last_error].to_json
+    end
+  end
 end
 
 get '/names' do
@@ -189,8 +200,10 @@ end
 
 get '/lastlog' do
   load_bridge
-  save_last_room params['room']
-  messages_js @bridge.lastlog(params['room'])
+  if @bridge.active?
+    save_last_room params['room']
+    messages_js @bridge.lastlog(params['room'])
+  end
 end
 
 post '/join' do
@@ -223,7 +236,6 @@ end
 
 get '/quit' do
   load_bridge
-  # TODO: Disconnect on client end
   clear_cookies
   redirect '/'
 end

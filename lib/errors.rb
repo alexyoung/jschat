@@ -14,6 +14,7 @@ module JsChat
   module Errors
     class InvalidName < JsChat::Error ; end
     class MessageTooLong < JsChat::Error ; end
+    class InvalidCookie < JsChat::Error ; end
 
     Codes = {
       # 1xx: User errors
@@ -22,6 +23,7 @@ module JsChat
       104 => :not_online,
       105 => :identity_required,
       106 => :already_identified,
+      107 => :invalid_cookie,
       # 2xx: Room errors
       200 => :already_joined,
       201 => :invalid_room,
