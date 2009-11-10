@@ -117,17 +117,6 @@ JsChat.ChatController = Class.create({
     });
   },
 
-  updateName: function() {
-    new Ajax.Request('/user/name', {
-      method: 'get',
-      parameters: { time: new Date().getTime() },
-      onSuccess: function(transport) {
-        $('name').innerHTML = transport.responseText;
-        Cookie.create('jschat-name', $('name').innerHTML, 28, '/');
-      }
-    });
-  },
-
   updateNames: function() {
     JsChat.Request.get('/names');
   },
@@ -159,7 +148,7 @@ JsChat.ChatController = Class.create({
     });
   },
 
-  displayMessages: function(text) {
+  displayMessages: function(text, successCallback) {
     var json_set = text.evalJSON(true);
     if (json_set.length == 0) {
       return;
@@ -170,6 +159,9 @@ JsChat.ChatController = Class.create({
           Change[json['change']](json[json['change']]);
         } else {
           Display[json['display']](json[json['display']]);
+          if (json['display'] !== 'error' && typeof successCallback !== 'undefined') {
+            successCallback();
+          }
         }
       } catch (exception) {
       }

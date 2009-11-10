@@ -35,8 +35,11 @@ var UserCommands = {
     new Ajax.Request('/change-name', {
       method: 'post',
       parameters: { name: name },
-      onSuccess: function() {
-        JsChat.Request.get('/names', this.updateName.bindAsEventListener(this));
+      onSuccess: function(response) {
+        this.displayMessages(response.responseText, function() {
+          $('name').innerHTML = name;
+          Cookie.create('jschat-name', name, 28, '/');
+        });
       }.bind(this),
       onFailure: function() {
         Display.add_message("Server error: couldn't access: #{url}".interpolate({ url: url }), 'server');
@@ -45,6 +48,6 @@ var UserCommands = {
   },
 
   '/names': function() {
-    JsChat.Request.get('/names');
+    JsChat.Request.get('/names', function(t) { this.displayMessages(t.responseText); }.bind(this));
   }
 };

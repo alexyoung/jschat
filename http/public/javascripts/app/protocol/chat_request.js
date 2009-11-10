@@ -7,7 +7,7 @@ JsChat.Request = {
       onFailure: function() {
         Display.add_message("Server error: couldn't access: #{url}".interpolate({ url: url }), 'server');
       },
-      onComplete: callback
+      onComplete: function(transport) { return callback(transport); }
     });
   }
 };

@@ -72,11 +72,11 @@ class JsChat::Bridge
   end
 
   def change(change_type, data)
-    response = send_json({ 'change' => change_type, change_type => data })
+    send_json({ 'change' => change_type, change_type => data })
   end
 
   def names(room)
-    send_json({'names' => room}, false)
+    send_json({'names' => room})
   end
 
   def send_json(h, get_results = true)
@@ -173,8 +173,7 @@ end
 
 post '/change-name' do
   load_bridge
-  save_nickname params['name']
-  @bridge.change 'user', { 'name' => params['name'] }  
+  [@bridge.change('user', { 'name' => params['name'] })].to_json
 end
 
 get '/messages' do
@@ -193,9 +192,8 @@ end
 
 get '/names' do
   load_bridge
-  @bridge.names params['room']
   save_last_room params['room']
-  "Request OK"
+  [@bridge.names(params['room'])].to_json
 end
 
 get '/lastlog' do
