@@ -62,7 +62,7 @@ class JsChat::Bridge
 
   def active?
     return false unless cookie_set?
-    response = send_json({ 'ping' => Time.now.utc })
+    response = ping
     if response.nil? or response['display'] == 'error'
       @last_error = response
       false
@@ -71,12 +71,20 @@ class JsChat::Bridge
     end
   end
 
+  def ping
+    send_json({ 'ping' => Time.now.utc })
+  end
+
   def change(change_type, data)
     send_json({ 'change' => change_type, change_type => data })
   end
 
   def names(room)
     send_json({'names' => room})
+  end
+
+  def send_quit(name)
+    send_json({'quit' => name })
   end
 
   def send_json(h, get_results = true)
@@ -232,7 +240,14 @@ get '/user/name' do
   nickname
 end
 
+get '/ping' do
+  load_bridge
+  @bridge.ping.to_json
+end
+
 get '/quit' do
+  load_bridge
+  @bridge.send_quit nickname
   load_bridge
   clear_cookies
   redirect '/'
@@ -247,4 +262,3 @@ get '/javascripts/all.js' do
   content_type 'text/javascript'
   secretary.concatenation.to_s
 end
-

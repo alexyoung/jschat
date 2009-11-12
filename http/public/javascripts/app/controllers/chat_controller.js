@@ -3,7 +3,7 @@ JsChat.ChatController = Class.create({
     $('loading').show();
 
     this.resizeEvent();
-    setTimeout(this.initDisplay.bindAsEventListener(this), 50);
+    setTimeout(this.initDisplay.bind(this), 50);
     this.tabCompletion = new TabCompletion('message');
 
     Event.observe(window, 'focus', this.focusEvent.bindAsEventListener(this));
@@ -92,7 +92,7 @@ JsChat.ChatController = Class.create({
       return false;
     });
 
-    this.startPolling();
+    this.createPollers();
     this.joinRoom();
   },
 
@@ -101,15 +101,18 @@ JsChat.ChatController = Class.create({
       method: 'post',
       parameters: { time: new Date().getTime(), room: PageHelper.currentRoom() },
       onComplete: function() {
+        // Make the server update the last polled time
+        JsChat.Request.get('/messages');
         new Ajax.Request('/lastlog', {
           method: 'get',
           parameters: { time: new Date().getTime(), room: PageHelper.currentRoom() },
           onFailure: function() {
-            Display.add_message("Error: Couldn't join channel", 'server'); $('loading').hide(); },
+            Display.add_message("Error: Couldn't join channel", 'server');
+            $('loading').hide();
+          },
           onComplete: function(transport) {
             $('loading').hide();
             this.showMessagesResponse(transport);
-            setTimeout(this.updateNames.bindAsEventListener(this), 250);
             document.title = PageHelper.title();
           }.bind(this)
         });
@@ -118,7 +121,7 @@ JsChat.ChatController = Class.create({
   },
 
   updateNames: function() {
-    JsChat.Request.get('/names');
+    apply(this, UserCommands['/names']);
   },
 
   showMessagesResponse: function(transport) {
@@ -184,9 +187,9 @@ JsChat.ChatController = Class.create({
     this.pollers.invoke('execute');
   },
 
-  startPolling: function() {
+  createPollers: function() {
     this.pollers = $A();
-    this.pollers.push(new PeriodicalExecuter(this.updateMessages.bindAsEventListener(this), 3));
-    this.pollers.push(new PeriodicalExecuter(this.checkIdleNames.bindAsEventListener(this), 5));
+    this.pollers.push(new PeriodicalExecuter(this.updateMessages.bind(this), 3));
+    this.pollers.push(new PeriodicalExecuter(this.checkIdleNames.bind(this), 5));
   }
 });

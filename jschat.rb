@@ -257,6 +257,12 @@ module JsChat
     end
   end
 
+  def quit(message, options = {})
+    if @user
+      disconnect_user @user
+    end
+  end
+
   def room_message(message, options)
     room = Room.find options['to']
     if room and room.users.include? @user
@@ -453,7 +459,7 @@ module JsChat
         input['ip'] ||= get_remote_ip
         response << send_response(identify(input['identify'], input['ip']))
       else
-        ['lastlog', 'change', 'send', 'join', 'names', 'part', 'since', 'ping'].each do |command|
+        ['lastlog', 'change', 'send', 'join', 'names', 'part', 'since', 'ping', 'quit'].each do |command|
           if @user.name.nil?
             response << send_response(Error.new(:identity_required, "Identify first"))
             return response
