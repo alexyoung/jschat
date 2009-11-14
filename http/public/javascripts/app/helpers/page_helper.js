@@ -3,6 +3,10 @@ var PageHelper = {
     return window.location.hash;
   },
 
+  nickname: function() {
+    return Cookie.find('jschat-name');
+  },
+
   title: function() {
     if (PageHelper.currentRoom()) {
       return 'JsChat: ' + PageHelper.currentRoom();

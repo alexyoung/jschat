@@ -100,28 +100,22 @@ JsChat.ChatController = Class.create({
     new Ajax.Request('/join', {
       method: 'post',
       parameters: { time: new Date().getTime(), room: PageHelper.currentRoom() },
+      onFailure: function() {
+        Display.add_message("Error: Couldn't join channel", 'server');
+        $('loading').hide();
+      },
       onComplete: function() {
         // Make the server update the last polled time
         JsChat.Request.get('/messages');
-        new Ajax.Request('/lastlog', {
-          method: 'get',
-          parameters: { time: new Date().getTime(), room: PageHelper.currentRoom() },
-          onFailure: function() {
-            Display.add_message("Error: Couldn't join channel", 'server');
-            $('loading').hide();
-          },
-          onComplete: function(transport) {
-            $('loading').hide();
-            this.showMessagesResponse(transport);
-            document.title = PageHelper.title();
-          }.bind(this)
-        });
+        document.title = PageHelper.title();
+        UserCommands['/lastlog'].apply(this);
+        $('loading').hide();
       }.bind(this)
     });
   },
 
   updateNames: function() {
-    apply(this, UserCommands['/names']);
+    UserCommands['/names'].apply(this);
   },
 
   showMessagesResponse: function(transport) {

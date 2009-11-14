@@ -26,8 +26,10 @@ var UserCommands = {
   '/lastlog': function() {
     $('messages').innerHTML = '';
     JsChat.Request.get('/lastlog', function(transport) {
-      JsChat.ChatController.prototype.displayMessages(transport.responseText);
-    });
+      this.displayMessages(transport.responseText);
+      $('names').innerHTML = '';
+      this.updateNames();
+    }.bind(this));
   },
 
   '/(name|nick)\\s+(.*)': function(name) {
