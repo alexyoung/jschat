@@ -13,5 +13,15 @@ var PageHelper = {
     } else {
       return 'JsChat';
     }
+  },
+
+  device: function() {
+    if ($$('body.iphone').length > 0) {
+      return 'iphone';
+    }
+  },
+
+  isDevice: function(device) {
+    return PageHelper.device() == device;
   }
 };

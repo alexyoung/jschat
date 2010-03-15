@@ -29,10 +29,12 @@ JsChat.ChatController = Class.create({
   },
 
   resizeEvent: function() {
-    var windowSize = document.viewport.getDimensions();
+    var messageInset = PageHelper.isDevice('iphone') ? 390 : 290,
+        heightInset = PageHelper.isDevice('iphone') ? 200 : 100,
+        windowSize = document.viewport.getDimensions();
     $('messages').setStyle({ width: windowSize.width - 220 + 'px' });
-    $('messages').setStyle({ height: windowSize.height - 100 + 'px' });
-    $('message').setStyle({ width: windowSize.width - 290 + 'px' });
+    $('messages').setStyle({ height: windowSize.height - heightInset + 'px' });
+    $('message').setStyle({ width: windowSize.width - messageInset + 'px' });
     $('names').setStyle({ height: windowSize.height - 200 + 'px' });
     Display.scrollMessagesToTop();
   },
