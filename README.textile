@@ -14,6 +14,16 @@ The *web app* has lots of interesting features:
 
 !http://dl.getdropbox.com/u/221414/blogs/jschat.png!
 
+h3. Installation
+
+You can install with rubygems:
+
+<pre>gem install jschat</pre>
+
+Then run <code>jschat-server</code> and <code>jschat-client</code> to try out the console client locally.
+
+To try out the web client, run <code>jschat-web</code> and visit "http://localhost:4567":http://localhost:4567.
+
 h3. Ruby Library Requirements
 
 These gems are required by JsChat:
@@ -45,10 +55,6 @@ The protocol is designed to be as close to executable JSON as possible, so clien
 
 Look at <em>client.rb</em> <code>JsChat::Protocol</code> to see what I mean.
 
-h3. The Future
-
-Hugely scalable nanite clusters with redundancy and ridiculous uptime, and an uplink to the Millennium Falcon. Skynet will launch its tactical nukes and humanity will be all but wiped out. Woops...
-
 h3. Hey, this is like Campfire!
 
 I love Campfire and I didn't intend for JsChat to compete with it.  JsChat is just a fun project, it doesn't offer Campfire's business-friendly interface, file hosting, transcripts and Basecamp integration.
@@ -59,8 +65,7 @@ JsChat was created by "Alex Young":http://alexyoung.org for "Helicoid":http://he
 
 * "nickmartini":http://github.com/nickmartini
 * "gabrielg":http://github.com/gabrielg
+* "Simon Starr":http://github.com/sstarr
 * Kevin Ford
 
 If you'd like to contribute, send "alexyoung":http://github.com/alexyoung a message on GitHub.
-
-I TYPE GREAT!

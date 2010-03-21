@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'logger'
-require 'jschat'
+require 'jschat/server'
 
 logger = Logger.new(STDERR)
 logger = Logger.new(STDOUT)
@@ -16,4 +16,3 @@ ServerConfig = {
 EM.run do
   EM.start_server ServerConfig[:ip], ServerConfig[:port], JsChat
 end
-

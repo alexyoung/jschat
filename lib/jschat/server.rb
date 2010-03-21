@@ -5,8 +5,8 @@ require 'time'
 require 'socket'
 
 # JsChat libraries
-require 'lib/errors'
-require 'lib/flood_protection'
+require 'jschat/errors'
+require 'jschat/flood_protection'
 
 module JsChat
   STATELESS_TIMEOUT = 60

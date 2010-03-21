@@ -4,8 +4,8 @@ require 'sha1'
 require 'json'
 require 'sprockets'
 
-set :public, Proc.new { File.join(root, 'public') }
-set :views, Proc.new { File.join(root, 'views') }
+set :public, File.join(File.dirname(__FILE__), 'public')
+set :views, File.join(File.dirname(__FILE__), 'views')
 
 module JsChat
   Config = {
