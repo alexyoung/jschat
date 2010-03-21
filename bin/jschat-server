@@ -2,17 +2,8 @@
 
 require 'logger'
 require 'jschat/server'
-
-logger = Logger.new(STDERR)
-logger = Logger.new(STDOUT)
-
-ServerConfig = {
-  :port => 6789,
-  :ip => '0.0.0.0',
-  :logger => logger,
-  :max_message_length => 500
-}
+require 'jschat/server-options'
 
 EM.run do
-  EM.start_server ServerConfig[:ip], ServerConfig[:port], JsChat
+  EM.start_server ServerConfig['ip'], ServerConfig['port'], JsChat
 end

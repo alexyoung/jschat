@@ -3,16 +3,12 @@ require 'sinatra'
 require 'sha1'
 require 'json'
 require 'sprockets'
+require 'jschat/server-options'
 
 set :public, File.join(File.dirname(__FILE__), 'public')
 set :views, File.join(File.dirname(__FILE__), 'views')
 
 module JsChat
-  Config = {
-    :ip   => '0.0.0.0',
-    :port => 6789
-  }
-
   class ConnectionError < Exception ; end
 end
 
@@ -90,7 +86,7 @@ class JsChat::Bridge
   def send_json(h, get_results = true)
     response = nil
     h[:cookie] = @cookie if cookie_set?
-    c = TCPSocket.open(JsChat::Config[:ip], JsChat::Config[:port])
+    c = TCPSocket.open(ServerConfig['ip'], ServerConfig['port'])
     c.send(h.to_json + "\n", 0)
     if get_results
       response = c.gets

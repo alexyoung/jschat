@@ -6,14 +6,14 @@ require 'optparse'
 require 'time'
 
 options = {}
-
+default_config_file = '~/.jschat/config.json'
 ARGV.clone.options do |opts|
   script_name = File.basename($0)
   opts.banner = "Usage: #{$0} [options]" 
 
   opts.separator ""
 
-  opts.on("-c", "--config=PATH", String, "Configuration file location (~/.jschat/config.json") { |o| options['config'] = o }
+  opts.on("-c", "--config=PATH", String, "Configuration file location (#{default_config_file})") { |o| options['config'] = o }
   opts.on("-h", "--hostname=host", String, "JsChat server hostname") { |o| options['hostname'] = o }
   opts.on("-p", "--port=port", String, "JsChat server port number") { |o| options['port'] = o }
   opts.on("-r", "--room=#room", String, "Channel to auto-join: remember to escape the hash") { |o| options['room'] = o }
@@ -33,8 +33,7 @@ def load_options(path)
   end
 end
 
-
-options = load_options(options['config'] || '~/.jschat/config.json').merge options
+options = load_options(options['config'] || default_config_file).merge options
 
 ClientConfig = {
   :port => options['port'] || '6789',

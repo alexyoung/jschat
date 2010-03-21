@@ -388,11 +388,11 @@ module JsChat
   end
 
   def log(level, message)
-    if Object.const_defined? :ServerConfig and ServerConfig[:logger]
+    if Object.const_defined? :ServerConfig and ServerConfig['logger']
       if @user
         message = "#{@user.name} (#{@user.ip}): #{message}"
       end
-      ServerConfig[:logger].send level, message
+      ServerConfig['logger'].send level, message
     end
   end
 
@@ -434,7 +434,7 @@ module JsChat
     response = ''
     disconnect_lagged_users
 
-    if data and data.size > ServerConfig[:max_message_length]
+    if data and data.size > ServerConfig['max_message_length']
       raise JsChat::Errors::MessageTooLong.new(:message_too_long, 'Message too long')
     end
 
