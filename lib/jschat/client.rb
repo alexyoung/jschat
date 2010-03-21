@@ -13,6 +13,7 @@ ARGV.clone.options do |opts|
 
   opts.separator ""
 
+  opts.on("-c", "--config=PATH", String, "Configuration file location (~/.jschat/config.json") { |o| options['config'] = o }
   opts.on("-h", "--hostname=host", String, "JsChat server hostname") { |o| options['hostname'] = o }
   opts.on("-p", "--port=port", String, "JsChat server port number") { |o| options['port'] = o }
   opts.on("-r", "--room=#room", String, "Channel to auto-join: remember to escape the hash") { |o| options['room'] = o }
@@ -21,6 +22,19 @@ ARGV.clone.options do |opts|
 
   opts.parse!
 end
+
+# Command line options will overrides these
+def load_options(path)
+  path = File.expand_path path
+  if File.exists? path
+    JSON.parse(File.read path)
+  else
+    {}
+  end
+end
+
+
+options = load_options(options['config'] || '~/.jschat/config.json').merge options
 
 ClientConfig = {
   :port => options['port'] || '6789',
