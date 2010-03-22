@@ -1,3 +1,5 @@
 body { font-size: 200% }
 input { font-size: 150% }
 #info { display: none }
+.header .rooms { top: 6px; } 
+.header .rooms li { padding-bottom: 4px; height: 1.25em; font-size: 120% }
