@@ -39,6 +39,10 @@ class JsChat::Bridge
     end
   end
 
+  def rooms
+    send_json({ :list => 'rooms' })
+  end
+
   def lastlog(room)
     response = send_json({ :lastlog => room })
     response['messages']
@@ -247,6 +251,11 @@ get '/quit' do
   load_bridge
   clear_cookies
   redirect '/'
+end
+
+get '/rooms' do
+  load_bridge
+  @bridge.rooms.to_json
 end
 
 # This serves the JavaScript concat'd by Sprockets

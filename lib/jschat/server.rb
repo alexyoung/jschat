@@ -432,10 +432,19 @@ module JsChat
       field, value = @user.send :change, options[change]
       { 'display' => 'notice', 'notice' => "Your #{field} has been changed to: #{value}" }
     else
-      Error.new(:invalid_request, "Invalid change request")
+      Error.new(:invalid_request, 'Invalid change request')
     end
   rescue JsChat::Errors::InvalidName => exception
     exception
+  end
+
+  def list(list, options = {})
+    case list
+      when 'rooms'
+        @user.rooms.collect { |room| room.name }
+    else
+      Error.new(:invalid_request, 'Invalid list command')
+    end
   end
 
   def send_response(data)
@@ -490,9 +499,9 @@ module JsChat
         input['ip'] ||= get_remote_ip
         response << send_response(identify(input['identify'], input['ip']))
       else
-        ['lastlog', 'change', 'send', 'join', 'names', 'part', 'since', 'ping', 'quit'].each do |command|
+        %w{lastlog change send join names part since ping list quit}.each do |command|
           if @user.name.nil?
-            response << send_response(Error.new(:identity_required, "Identify first"))
+            response << send_response(Error.new(:identity_required, 'Identify first'))
             return response
           end
 
