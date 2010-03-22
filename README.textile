@@ -43,7 +43,7 @@ The web app must be run alongside the server.  The web app must be started in pr
 
 The web app currently has no database dependencies, it's a wrapper that links cookies to JsChat server proxies.  You can run it on port 80 by configuring Rack or an Apache proxy.  I have Apache set up this way on "jschat.org":http://jschat.org.
 
-h3. Configuration files
+h3. Configuration Files
 
 These are the default locations of the configuration files.  You can override them with <code>--config=PATH</code>:
 
@@ -56,6 +56,16 @@ The file format is JSON, like this:
 
 <pre>
 { "port": 3001 }
+</pre>
+
+h3. Server Configuration Options
+
+<pre>
+{
+  "port": integer,
+  "ip": "string: IP address to bind to",
+  "tmp_files": "string: path to tmp files (including PID file)"
+}
 </pre>
 
 h3. Client Commands

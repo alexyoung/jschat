@@ -11,6 +11,37 @@ require 'jschat/flood_protection'
 module JsChat
   STATELESS_TIMEOUT = 60
 
+  module Server
+    def self.pid_file_name
+      File.join(ServerConfig['tmp_files'], 'jschat.pid')
+    end
+
+    def self.write_pid_file
+      return unless ServerConfig['use_tmp_files']
+      File.open(pid_file_name, 'w') { |f| f << Process.pid }
+    end
+
+    def self.rm_pid_file
+      FileUtils.rm pid_file_name
+    end
+
+    def self.stop
+      rm_pid_file
+    end
+
+    def self.run!
+      write_pid_file
+
+      at_exit do
+        stop
+      end
+
+      EM.run do
+        EM.start_server ServerConfig['ip'], ServerConfig['port'], JsChat
+      end
+    end
+  end
+
   class User
     include JsChat::FloodProtection
 
