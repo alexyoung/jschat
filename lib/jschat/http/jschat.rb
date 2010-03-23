@@ -3,7 +3,7 @@ require 'sinatra'
 require 'sha1'
 require 'json'
 require 'sprockets'
-require 'jschat/server-options'
+require 'jschat/server_options'
 
 set :public, File.join(File.dirname(__FILE__), 'public')
 set :views, File.join(File.dirname(__FILE__), 'views')

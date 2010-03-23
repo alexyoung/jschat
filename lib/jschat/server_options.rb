@@ -13,7 +13,10 @@ ServerConfigDefaults = {
   'ip' => '0.0.0.0',
   'logger' => logger,
   'max_message_length' => 500,
-  'tmp_files' => File.join(Dir::tmpdir, 'jschat')
+  'tmp_files' => File.join(Dir::tmpdir, 'jschat'),
+  'db_name' => 'jschat',
+  'db_host' => 'localhost',
+  'db_port' => 27017
 }
 
 # Command line options will overrides these

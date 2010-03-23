@@ -7,6 +7,7 @@ require 'socket'
 # JsChat libraries
 require 'jschat/errors'
 require 'jschat/flood_protection'
+require 'jschat/storage/init'
 
 module JsChat
   STATELESS_TIMEOUT = 60
@@ -25,12 +26,23 @@ module JsChat
       FileUtils.rm pid_file_name
     end
 
+    def self.init_storage
+      if JsChat::Storage::MongoDriver.available?
+        JsChat::Storage.enabled = true
+        JsChat::Storage.driver = JsChat::Storage::MongoDriver
+      else
+        JsChat::Storage.enabled = false
+        JsChat::Storage.driver = JsChat::Storage::NullDriver
+      end
+    end
+
     def self.stop
       rm_pid_file
     end
 
     def self.run!
       write_pid_file
+      init_storage
 
       at_exit do
         stop
@@ -136,10 +148,11 @@ module JsChat
     end
 
     def messages_since(since)
+      messages = JsChat::Storage.driver.lastlog(100)
       if since.nil?
-        @messages
+        messages
       else
-        @messages.select { |m| message_time(m) > since }
+        messages.select { |m| message_time(m) > since }
       end
     end
 
@@ -148,19 +161,19 @@ module JsChat
         message[message['display']]['time']
       elsif message.has_key? 'change'
         message[message['change']]['time']
+      else
+        Time.now
       end
     end
 
     def add_to_lastlog(message)
-      @messages ||= []
       if message
         if message.has_key? 'display'
           message[message['display']]['time'] = Time.now.utc
         elsif message.has_key? 'change'
           message[message['change']]['time'] = Time.now.utc
         end
-        @messages.push message
-        @messages = @messages[-100..-1] if @messages.size > 100
+        JsChat::Storage.driver.log message
       end
     end
 
@@ -534,7 +547,7 @@ module JsChat
     print_call_stack
   end
 
-  def print_call_stack(from = 2, to = 5)
+  def print_call_stack(from = 0, to = 10)
     puts "Stack:"
     (from..to).each do |index|
       puts "\t#{caller[index]}"

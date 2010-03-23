@@ -2,6 +2,6 @@
 
 require 'logger'
 require 'jschat/server'
-require 'jschat/server-options'
+require 'jschat/server_options'
 
 JsChat::Server.run!
