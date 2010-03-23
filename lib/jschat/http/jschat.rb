@@ -56,6 +56,10 @@ class JsChat::Bridge
     send_json({ :join => room }, false)
   end
 
+  def part(room)
+    send_json({ :part => room })
+  end
+
   def send_message(message, to)
     send_json({ :send => message, :to => to }, false)
   end
@@ -216,7 +220,18 @@ post '/join' do
   load_bridge
   @bridge.join params['room']
   save_last_room params['room']
-  "Request OK"
+  'OK'
+end
+
+get '/part' do
+  load_bridge
+  @bridge.part params['room']
+
+  if @bridge.last_error
+    error 500, [@bridge.last_error].to_json 
+  else
+    'OK'
+  end
 end
 
 get '/chat/' do
