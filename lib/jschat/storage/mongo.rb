@@ -9,13 +9,14 @@ module JsChat::Storage
       @db = Mongo::Connection.new(ServerConfig['db_host'], ServerConfig['db_port']).db(ServerConfig['db_name'])
     end
 
-    def self.log(message)
+    def self.log(message, room)
       message['time_index'] = Time.now.to_i
+      message['room'] = room
       @db['events'].insert(message)
     end
 
-    def self.lastlog(number)
-      @db['events'].find({}, { :limit => number, :sort => ['time_index', Mongo::ASCENDING] }).to_a
+    def self.lastlog(number, room)
+      @db['events'].find({ :room => room }, { :limit => number, :sort => ['time_index', Mongo::ASCENDING] }).to_a
     end
 
     # TODO: use twitter oauth for the key

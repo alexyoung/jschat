@@ -148,7 +148,7 @@ module JsChat
     end
 
     def messages_since(since)
-      messages = JsChat::Storage.driver.lastlog(100)
+      messages = JsChat::Storage.driver.lastlog(100, name)
       if since.nil?
         messages
       else
@@ -173,7 +173,7 @@ module JsChat
         elsif message.has_key? 'change'
           message[message['change']]['time'] = Time.now.utc
         end
-        JsChat::Storage.driver.log message
+        JsChat::Storage.driver.log message, name
       end
     end
 
