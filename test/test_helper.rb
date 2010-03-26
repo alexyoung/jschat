@@ -2,10 +2,11 @@ require 'test/unit'
 require 'rubygems'
 require 'eventmachine'
 require 'json'
-require File.join(File.dirname(__FILE__), '../', 'jschat.rb')
+$:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'jschat', 'server.rb')
 
 ServerConfig = {
-  :max_message_length => 500
+  'max_message_length' => 500
 }
 
 class JsChat::Room
@@ -59,3 +60,7 @@ class JsChatMock
     room.users << user
   end
 end
+
+JsChat::Storage.enabled = false
+JsChat::Storage.driver = JsChat::Storage::NullDriver
+

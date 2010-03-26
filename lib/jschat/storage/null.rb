@@ -1,5 +1,5 @@
 module JsChat::Storage
-  MEMORY_MESSAGE_LIMIT = 1000
+  MEMORY_MESSAGE_LIMIT = 100
 
   module NullDriver
     def self.log(message, room)
@@ -11,7 +11,7 @@ module JsChat::Storage
 
     def self.lastlog(number, room)
       @messages ||= []
-      @messages.select { |m| m['room'] == room }[0..number]
+      @messages.select { |m| m['room'] == room }.reverse[0..number].reverse
     end
 
     def self.find_user(name)

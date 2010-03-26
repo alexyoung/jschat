@@ -20,6 +20,7 @@ h1 { text-align: left; margin-left: 20px }
 .header .rooms li { float: left; margin: 0 1px 0 0; padding: 2px 6px 3px 6px; background-color: #f0f0f0; border: 1px solid #aaa; border-bottom: #fff; font-size: 90%; height: 18px }
 .header .rooms li.selected { background-color: #fff; border: 1px solid #ccc; border-bottom: #fff }
 .header .rooms li a { color: #777; text-decoration: none }
+.header .rooms li a.new { color: #990000; font-weight: bold; }
 .header .rooms li a:hover { color: #000 }
 .header .rooms li.selected a { color: #444 }
 

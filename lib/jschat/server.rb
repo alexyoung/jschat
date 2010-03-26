@@ -11,6 +11,7 @@ require 'jschat/storage/init'
 
 module JsChat
   STATELESS_TIMEOUT = 60
+  LASTLOG_DEFAULT = 100
 
   module Server
     def self.pid_file_name
@@ -147,32 +148,23 @@ module JsChat
       { 'display' => 'messages', 'messages' => messages_since(since) }
     end
 
+    def last_update_time
+      message = JsChat::Storage.driver.lastlog(LASTLOG_DEFAULT, name).last
+      message['time'] if message
+    end
+
     def messages_since(since)
-      messages = JsChat::Storage.driver.lastlog(100, name)
+      messages = JsChat::Storage.driver.lastlog(LASTLOG_DEFAULT, name)
       if since.nil?
         messages
       else
-        messages.select { |m| message_time(m) > since }
-      end
-    end
-
-    def message_time(message)
-      if message.has_key? 'display'
-        message[message['display']]['time']
-      elsif message.has_key? 'change'
-        message[message['change']]['time']
-      else
-        Time.now
+        messages.select { |m| m['time'] > since }
       end
     end
 
     def add_to_lastlog(message)
       if message
-        if message.has_key? 'display'
-          message[message['display']]['time'] = Time.now.utc
-        elsif message.has_key? 'change'
-          message[message['change']]['time'] = Time.now.utc
-        end
+        message['time'] = Time.now.utc
         JsChat::Storage.driver.log message, name
       end
     end
@@ -289,6 +281,14 @@ module JsChat
     else
       Error.new(:not_in_room, "Please join this room first")
     end
+  end
+
+  def times(message, options = {})
+    times = {}
+    @user.rooms.each do |room|
+      times[room.name] = room.last_update_time
+    end
+    times
   end
 
   def ping(message, options = {})
@@ -512,7 +512,7 @@ module JsChat
         input['ip'] ||= get_remote_ip
         response << send_response(identify(input['identify'], input['ip']))
       else
-        %w{lastlog change send join names part since ping list quit}.each do |command|
+        %w{lastlog change send join names part since ping list quit times}.each do |command|
           if @user.name.nil?
             response << send_response(Error.new(:identity_required, 'Identify first'))
             return response
@@ -545,6 +545,7 @@ module JsChat
     puts "Data that raised exception: #{exception}"
     p data
     print_call_stack
+    raise
   end
 
   def print_call_stack(from = 0, to = 10)

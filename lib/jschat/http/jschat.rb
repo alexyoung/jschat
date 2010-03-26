@@ -52,6 +52,10 @@ class JsChat::Bridge
     send_json({ 'since' => room })['messages']
   end
 
+  def room_update_times
+    send_json({ 'times' => 'all' })
+  end
+
   def join(room)
     send_json({ :join => room }, false)
   end
@@ -199,6 +203,13 @@ get '/messages' do
     else
       [@bridge.last_error].to_json
     end
+  end
+end
+
+get '/room_update_times' do
+  load_bridge
+  if @bridge.active?
+    messages_js @bridge.room_update_times
   end
 end
 
