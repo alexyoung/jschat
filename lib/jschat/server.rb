@@ -158,7 +158,7 @@ module JsChat
       if since.nil?
         messages
       else
-        messages.select { |m| m['time'] > since }
+        messages.select { |m| m['time'] && m['time'] > since }
       end
     end
 
