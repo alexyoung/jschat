@@ -229,6 +229,13 @@ helpers do
     JsChat::Storage.driver.save_user(options)
   end
 
+  def save_twitter_user_rooms
+    if twitter_user?
+      rooms = @bridge.rooms
+      save_twitter_user('rooms' => rooms)
+    end
+  end
+
   def load_twitter_user
     JsChat::Storage.driver.find_user({ 'twitter_name' => session[:twitter_name] }) || {}
   end
@@ -312,19 +319,14 @@ post '/join' do
   load_bridge
   @bridge.join params['room']
   save_last_room params['room']
-
-  if twitter_user?
-    rooms = @bridge.rooms
-    save_twitter_user('rooms' => rooms)
-  end
-
+  save_twitter_user_rooms
   'OK'
 end
 
 get '/part' do
   load_bridge
   @bridge.part params['room']
-
+  save_twitter_user_rooms
   if @bridge.last_error
     error 500, [@bridge.last_error].to_json 
   else
@@ -374,7 +376,6 @@ get '/rooms' do
 end
 
 get '/twitter' do
-  p url_for('/twitter_auth', :full)
   request_token = @twitter.request_token(
     :oauth_callback => url_for('/twitter_auth', :full)
   )
@@ -401,6 +402,7 @@ get '/twitter_auth' do
     session[:twitter_name] = @twitter.info['screen_name']
 
     # TODO: Make this cope if someone has the same name
+    room = '#jschat'
     save_nickname @twitter.info['screen_name']
     user = load_twitter_user
     session[:jschat_id] = user['jschat_id'] if user['jschat_id'] and !user['jschat_id'].empty?
@@ -408,7 +410,11 @@ get '/twitter_auth' do
     user = load_twitter_user
 
     load_bridge
-    unless @bridge.active?
+    if @bridge.active?
+      if user['rooms'] and user['rooms'].any?
+        room = user['rooms'].first
+      end
+    else
       session[:jschat_id] = nil
       load_and_connect
       save_twitter_user('jschat_id' => session[:jschat_id])
@@ -417,13 +423,14 @@ get '/twitter_auth' do
         user['rooms'].each do |room|
           @bridge.join room
         end
+        room = user['rooms'].first
       else
         save_last_room '#jschat'
         @bridge.join '#jschat'
       end
     end
 
-    redirect '/chat/#jschat'
+    redirect "/chat/#{room}"
   else
     redirect '/'
   end
