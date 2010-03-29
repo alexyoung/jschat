@@ -17,6 +17,8 @@ ServerConfigDefaults = {
   'db_name' => 'jschat',
   'db_host' => 'localhost',
   'db_port' => 27017
+  # Register your instance of JsChat here: http://twitter.com/apps/create
+  # 'twitter' => { 'key' => '', 'secret' => '' }
 }
 
 # Command line options will overrides these

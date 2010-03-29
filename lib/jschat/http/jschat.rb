@@ -3,13 +3,60 @@ require 'sinatra'
 require 'sha1'
 require 'json'
 require 'sprockets'
-require 'jschat/server_options'
+require 'jschat/init'
 
 set :public, File.join(File.dirname(__FILE__), 'public')
 set :views, File.join(File.dirname(__FILE__), 'views')
+set :sessions, true
+
+module JsChat::Auth
+end
+
+module JsChat::Auth::Twitter
+  def self.template
+    :twitter
+  end
+
+  def self.load
+    require 'twitter_oauth'
+    @loaded = true
+  rescue LoadError
+    puts 'Error: twitter_oauth gem not found'
+    @loaded = false
+  end
+
+  def self.loaded?
+    @loaded
+  end
+end
 
 module JsChat
   class ConnectionError < Exception ; end
+
+  def self.configure_authenticators
+    if ServerConfig['twitter']
+      JsChat::Auth::Twitter.load
+    end
+  end
+
+  def self.init
+    configure_authenticators
+    JsChat.init_storage
+  end
+end
+
+JsChat.init
+
+before do
+  if JsChat::Auth::Twitter.loaded?
+    @user = session[:user]
+    @twitter = TwitterOAuth::Client.new(
+      :consumer_key => ServerConfig['twitter']['key'],
+      :consumer_secret => ServerConfig['twitter']['secret'],
+      :token => session[:access_token],
+      :secret => session[:secret_token]
+    )
+  end
 end
 
 # todo: can this be async and allow the server to have multiple threads? 
@@ -157,6 +204,28 @@ helpers do
   def clear_cookies
     response.set_cookie 'last-room', nil
     response.set_cookie 'jschat-id', nil
+    session[:user] = nil
+    session[:request_token] = nil
+    session[:request_token_secret] = nil
+    session[:access_token] = nil
+    session[:secret_token] = nil
+  end
+
+  def save_user(options = {})
+    # FIXME: User name is used as the unique ID and we're letting people change their name
+    JsChat::Storage.driver.save_user(options.merge(load_user.merge({
+      'name'         => nickname,
+      'access_token' => session[:access_token],
+      'secret_token' => session[:secret_token]
+    })))
+  end
+
+  def load_user
+    if session[:access_token] 
+      JsChat::Storage.driver.find_user({ 'access_token' => session[:access_token] }) || {}
+    else
+      {}
+    end
   end
 
   def nickname
@@ -281,7 +350,52 @@ end
 
 get '/rooms' do
   load_bridge
-  @bridge.rooms.to_json
+  rooms = @bridge.rooms
+  save_user('rooms' => rooms)
+  rooms.to_json
+end
+
+get '/twitter' do
+  request_token = @twitter.request_token(
+    :oauth_callback => 'http://localhost:4567/twitter_auth'
+  )
+  session[:request_token] = request_token.token
+  session[:request_token_secret] = request_token.secret
+  redirect request_token.authorize_url.gsub('authorize', 'authenticate') 
+end
+
+get '/twitter_auth' do
+  load_bridge
+
+  # Exchange the request token for an access token.
+  begin
+    @access_token = @twitter.authorize(
+      session[:request_token],
+      session[:request_token_secret],
+      :oauth_verifier => params[:oauth_verifier]
+    )
+  rescue OAuth::Unauthorized => exception
+    puts exception
+  end
+  
+  if @twitter.authorized?
+    # Storing the access tokens so we don't have to go back to Twitter again
+    # in this session. In a larger app you would probably persist these details somewhere.
+    session[:access_token] = @access_token.token
+    session[:secret_token] = @access_token.secret
+    session[:user] = true
+
+    # TODO: 1. Make this cope if someone has stolen their name
+    #       2. Automatically load name from db
+    name = @twitter.info['screen_name']
+    room = '#jschat'
+    save_last_room room
+    save_nickname name
+    save_user
+    erb :twitter_auth
+  else
+    redirect '/'
+  end
 end
 
 # This serves the JavaScript concat'd by Sprockets

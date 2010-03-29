@@ -5,14 +5,11 @@ require 'time'
 require 'socket'
 
 # JsChat libraries
+require 'jschat/init'
 require 'jschat/errors'
 require 'jschat/flood_protection'
-require 'jschat/storage/init'
 
 module JsChat
-  STATELESS_TIMEOUT = 60
-  LASTLOG_DEFAULT = 100
-
   module Server
     def self.pid_file_name
       File.join(ServerConfig['tmp_files'], 'jschat.pid')
@@ -27,23 +24,13 @@ module JsChat
       FileUtils.rm pid_file_name
     end
 
-    def self.init_storage
-      if JsChat::Storage::MongoDriver.available?
-        JsChat::Storage.enabled = true
-        JsChat::Storage.driver = JsChat::Storage::MongoDriver
-      else
-        JsChat::Storage.enabled = false
-        JsChat::Storage.driver = JsChat::Storage::NullDriver
-      end
-    end
-
     def self.stop
       rm_pid_file
     end
 
     def self.run!
       write_pid_file
-      init_storage
+      JsChat.init_storage
 
       at_exit do
         stop
@@ -310,7 +297,7 @@ module JsChat
   def room_message(message, options)
     room = Room.find options['to']
     if room and room.users.include? @user
-      room.send_message({ 'message' => message, 'user' => @user.name, 'time' => Time.now.utc })
+      room.send_message({ 'message' => message, 'user' => @user.name })
     else
       send_response Error.new(:not_in_room, "Please join this room first")
     end
@@ -321,8 +308,8 @@ module JsChat
     if user
       # Return the message to the user, and send it to the other person too
       now = Time.now.utc
-      user.private_message({ 'message' => message, 'user' => @user.name, 'time' => now })
-      @user.private_message({ 'message' => message, 'user' => @user.name, 'time' => now })
+      user.private_message({ 'message' => message, 'user' => @user.name })
+      @user.private_message({ 'message' => message, 'user' => @user.name })
     else
       Error.new(:not_online, 'User not online')
     end

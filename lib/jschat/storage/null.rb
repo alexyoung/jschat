@@ -14,7 +14,10 @@ module JsChat::Storage
       @messages.select { |m| m['room'] == room }.reverse[0..number].reverse
     end
 
-    def self.find_user(name)
+    def self.find_user(options)
+    end
+
+    def self.save_user(user)
     end
 
     def self.set_rooms(name, rooms)

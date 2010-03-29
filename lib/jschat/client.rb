@@ -130,7 +130,7 @@ module JsChat
       command = get_command json
 
       if command
-        time = get_time json[json[command]]
+        time = get_time json
         response = send(protocol_method_name(command, json[command]), json[json[command]])
         case response
         when Array
