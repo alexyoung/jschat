@@ -4,6 +4,7 @@ require 'sha1'
 require 'json'
 require 'sprockets'
 require 'jschat/init'
+require 'jschat/http/helpers/url_for'
 
 set :public, File.join(File.dirname(__FILE__), 'public')
 set :views, File.join(File.dirname(__FILE__), 'views')
@@ -373,8 +374,9 @@ get '/rooms' do
 end
 
 get '/twitter' do
+  p url_for('/twitter_auth', :full)
   request_token = @twitter.request_token(
-    :oauth_callback => 'http://localhost:4567/twitter_auth'
+    :oauth_callback => url_for('/twitter_auth', :full)
   )
   session[:request_token] = request_token.token
   session[:request_token_secret] = request_token.secret
