@@ -173,13 +173,13 @@ helpers do
   end
 
   def load_bridge
-    @bridge = JsChat::Bridge.new request.cookies['jschat-id']
+    @bridge = JsChat::Bridge.new session[:jschat_id]
   end
 
   def load_and_connect
-    @bridge = JsChat::Bridge.new request.cookies['jschat-id']
+    @bridge = JsChat::Bridge.new session[:jschat_id]
     @bridge.connect
-    response.set_cookie 'jschat-id', @bridge.cookie
+    session[:jschat_id] = @bridge.cookie
   end
 
   def save_last_room(room)
@@ -206,7 +206,7 @@ helpers do
 
   def clear_cookies
     response.set_cookie 'last-room', nil
-    response.set_cookie 'jschat-id', nil
+    session[:jschat_id] = nil
     session[:request_token] = nil
     session[:request_token_secret] = nil
     session[:access_token] = nil
@@ -234,8 +234,8 @@ helpers do
 
   def load_twitter_user_and_set_bridge_id
     user = load_twitter_user
-    if user['jschat-id'] and user['jschat-id'].size > 0
-      response.set_cookie 'jschat-id', user['jschat-id']
+    if user['jschat_id'] and user['jschat_id'].size > 0
+      response.set_cookie 'jschat_id', user['jschat_id']
     end
   end
 
@@ -382,8 +382,6 @@ get '/twitter' do
 end
 
 get '/twitter_auth' do
-  load_and_connect
-
   # Exchange the request token for an access token.
   begin
     @access_token = @twitter.authorize(
@@ -403,19 +401,23 @@ get '/twitter_auth' do
     # TODO: Make this cope if someone has the same name
     save_nickname @twitter.info['screen_name']
     user = load_twitter_user
-    response.set_cookie 'jschat-id', user['jschat-id'] if user['jschat-id']
-    save_twitter_user('twitter_name' => @twitter.info['screen_name'], 'jschat-id' => request.cookies['jschat-id'])
+    session[:jschat_id] = user['jschat_id'] if user['jschat_id'] and !user['jschat_id'].empty?
+    save_twitter_user('twitter_name' => @twitter.info['screen_name'], 'jschat_id' => session[:jschat_id])
     user = load_twitter_user
 
-    if user['rooms'].nil? or user['rooms'].empty?
-      room = '#jschat'
-      save_last_room room
+    load_bridge
+    unless @bridge.active?
+      session[:jschat_id] = nil
+      load_and_connect
+      save_twitter_user('jschat_id' => session[:jschat_id])
       @bridge.identify(@twitter.info['screen_name'], request.ip, (((60 * 60) * 24) * 7))
-
       if user['rooms']
         user['rooms'].each do |room|
           @bridge.join room
         end
+      else
+        save_last_room '#jschat'
+        @bridge.join '#jschat'
       end
     end
 
