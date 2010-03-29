@@ -46,7 +46,7 @@ module JsChat
     include JsChat::FloodProtection
 
     attr_accessor :name, :connection, :rooms, :last_activity,
-                  :identified, :ip, :last_poll
+                  :identified, :ip, :last_poll, :session_length
 
     def initialize(connection)
       @name = nil
@@ -56,6 +56,18 @@ module JsChat
       @last_poll = Time.now.utc
       @identified = false
       @ip = ''
+      @expires = nil
+      @session_length = nil
+    end
+
+    def session_expired?
+      return true if @expires.nil?
+      Time.now.utc >= @expires
+    end
+
+    def update_session_expiration
+      return if @session_length.nil?
+      @expires = Time.now.utc + @session_length
     end
 
     def to_json
@@ -235,14 +247,16 @@ module JsChat
   end
 
   # {"identify":"alex"}
-  def identify(name, ip, options = {})
+  def identify(name, ip, session_length, options = {})
     if @user and @user.identified
       Error.new :already_identified, 'You have already identified'
     elsif name_taken? name
       Error.new :name_taken, 'Name already taken'
     else
       @user.name = name
-      @user.ip   = ip
+      @user.ip = ip
+      @user.session_length = session_length
+      @user.update_session_expiration
       register_stateless_user if @stateless
       { 'display' => 'identified', 'identified' => @user }
     end
@@ -281,6 +295,7 @@ module JsChat
   def ping(message, options = {})
     if @user and @user.last_poll and Time.now.utc > @user.last_poll
       time = Time.now.utc
+      @user.update_session_expiration
       { 'pong' => time }
     else
       # TODO: HANDLE PING OUTS
@@ -388,7 +403,9 @@ module JsChat
 
   def disconnect_lagged_users
     @@stateless_cookies.delete_if do |cookie|
-      lagged?(cookie[:user].last_poll) ? disconnect_user(cookie[:user]) && true : false
+      if cookie[:user].session_expired?
+        lagged?(cookie[:user].last_poll) ? disconnect_user(cookie[:user]) && true : false
+      end
     end
   end
 
@@ -497,7 +514,7 @@ module JsChat
         end
       elsif input.has_key? 'identify'
         input['ip'] ||= get_remote_ip
-        response << send_response(identify(input['identify'], input['ip']))
+        response << send_response(identify(input['identify'], input['ip'], input['session_length']))
       else
         %w{lastlog change send join names part since ping list quit times}.each do |command|
           if @user.name.nil?

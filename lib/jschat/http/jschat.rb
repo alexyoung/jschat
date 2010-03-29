@@ -49,13 +49,16 @@ JsChat.init
 
 before do
   if JsChat::Auth::Twitter.loaded?
-    @user = session[:user]
     @twitter = TwitterOAuth::Client.new(
       :consumer_key => ServerConfig['twitter']['key'],
       :consumer_secret => ServerConfig['twitter']['secret'],
       :token => session[:access_token],
       :secret => session[:secret_token]
     )
+
+    if twitter_user?
+      load_twitter_user_and_set_bridge_id
+    end
   end
 end
 
@@ -76,8 +79,8 @@ class JsChat::Bridge
     @cookie = response['cookie']
   end
 
-  def identify(name, ip)
-    response = send_json({ :identify => name, :ip => ip })
+  def identify(name, ip, session_length = nil)
+    response = send_json({ :identify => name, :ip => ip, :session_length => session_length })
     if response['display'] == 'error'
       @identification_error = response
       false
@@ -204,27 +207,35 @@ helpers do
   def clear_cookies
     response.set_cookie 'last-room', nil
     response.set_cookie 'jschat-id', nil
-    session[:user] = nil
     session[:request_token] = nil
     session[:request_token_secret] = nil
     session[:access_token] = nil
     session[:secret_token] = nil
+    session[:twitter_name] = nil
   end
 
-  def save_user(options = {})
-    # FIXME: User name is used as the unique ID and we're letting people change their name
-    JsChat::Storage.driver.save_user(options.merge(load_user.merge({
+  def twitter_user?
+    session[:access_token] && session[:secret_token]
+  end
+
+  def save_twitter_user(options = {})
+    options = load_twitter_user.merge(options).merge({
       'name'         => nickname,
+      'twitter_name' => session[:twitter_name],
       'access_token' => session[:access_token],
       'secret_token' => session[:secret_token]
-    })))
+    })
+    JsChat::Storage.driver.save_user(options)
   end
 
-  def load_user
-    if session[:access_token] 
-      JsChat::Storage.driver.find_user({ 'access_token' => session[:access_token] }) || {}
-    else
-      {}
+  def load_twitter_user
+    JsChat::Storage.driver.find_user({ 'twitter_name' => session[:twitter_name] }) || {}
+  end
+
+  def load_twitter_user_and_set_bridge_id
+    user = load_twitter_user
+    if user['jschat-id'] and user['jschat-id'].size > 0
+      response.set_cookie 'jschat-id', user['jschat-id']
     end
   end
 
@@ -300,6 +311,12 @@ post '/join' do
   load_bridge
   @bridge.join params['room']
   save_last_room params['room']
+
+  if twitter_user?
+    rooms = @bridge.rooms
+    save_twitter_user('rooms' => rooms)
+  end
+
   'OK'
 end
 
@@ -351,7 +368,7 @@ end
 get '/rooms' do
   load_bridge
   rooms = @bridge.rooms
-  save_user('rooms' => rooms)
+  save_twitter_user('rooms' => rooms) if twitter_user?
   rooms.to_json
 end
 
@@ -365,7 +382,7 @@ get '/twitter' do
 end
 
 get '/twitter_auth' do
-  load_bridge
+  load_and_connect
 
   # Exchange the request token for an access token.
   begin
@@ -379,20 +396,30 @@ get '/twitter_auth' do
   end
   
   if @twitter.authorized?
-    # Storing the access tokens so we don't have to go back to Twitter again
-    # in this session. In a larger app you would probably persist these details somewhere.
     session[:access_token] = @access_token.token
     session[:secret_token] = @access_token.secret
-    session[:user] = true
+    session[:twitter_name] = @twitter.info['screen_name']
 
-    # TODO: 1. Make this cope if someone has stolen their name
-    #       2. Automatically load name from db
-    name = @twitter.info['screen_name']
-    room = '#jschat'
-    save_last_room room
-    save_nickname name
-    save_user
-    erb :twitter_auth
+    # TODO: Make this cope if someone has the same name
+    save_nickname @twitter.info['screen_name']
+    user = load_twitter_user
+    response.set_cookie 'jschat-id', user['jschat-id'] if user['jschat-id']
+    save_twitter_user('twitter_name' => @twitter.info['screen_name'], 'jschat-id' => request.cookies['jschat-id'])
+    user = load_twitter_user
+
+    if user['rooms'].nil? or user['rooms'].empty?
+      room = '#jschat'
+      save_last_room room
+      @bridge.identify(@twitter.info['screen_name'], request.ip, (((60 * 60) * 24) * 7))
+
+      if user['rooms']
+        user['rooms'].each do |room|
+          @bridge.join room
+        end
+      end
+    end
+
+    redirect '/chat/#jschat'
   else
     redirect '/'
   end
