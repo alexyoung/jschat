@@ -8,9 +8,13 @@ module JsChat::Storage
     def self.connect!
       @db = Mongo::Connection.new(ServerConfig['db_host'], ServerConfig['db_port']).db(ServerConfig['db_name'])
       if ServerConfig['db_username'] and ServerConfig['db_password']
-        unless @db.authenticate(ServerConfig['db_username'], ServerConfig['db_password'])
+        if @db.authenticate(ServerConfig['db_username'], ServerConfig['db_password'])
+          true
+        else
           raise 'Bad Mongo username or password'
         end
+      else
+        true
       end
     end
 
@@ -43,6 +47,7 @@ module JsChat::Storage
       return unless Object.const_defined?(:Mongo)
       connect!
     rescue
+      p $!
       puts 'Failed to connect to mongo'
       false
     end

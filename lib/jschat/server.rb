@@ -549,7 +549,6 @@ module JsChat
     puts "Data that raised exception: #{exception}"
     p data
     print_call_stack
-    raise
   end
 
   def print_call_stack(from = 0, to = 10)
