@@ -16,7 +16,9 @@ ServerConfigDefaults = {
   'tmp_files' => File.join(Dir::tmpdir, 'jschat'),
   'db_name' => 'jschat',
   'db_host' => 'localhost',
-  'db_port' => 27017
+  'db_port' => 27017,
+  #'db_user' => '',
+  #'db_password' => '',
   # Register your instance of JsChat here: http://twitter.com/apps/create
   # 'twitter' => { 'key' => '', 'secret' => '' }
 }
