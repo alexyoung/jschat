@@ -20,7 +20,7 @@ module JsChat::Storage
     def self.save_user(user)
     end
 
-    def self.set_rooms(name, rooms)
+    def self.delete_user(user)
     end
   end
 end

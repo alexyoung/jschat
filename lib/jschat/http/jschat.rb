@@ -236,6 +236,10 @@ helpers do
     end
   end
 
+  def delete_twitter_user
+    JsChat::Storage.driver.delete_user({ 'twitter_name' => session[:twitter_name] })
+  end
+
   def load_twitter_user
     JsChat::Storage.driver.find_user({ 'twitter_name' => session[:twitter_name] }) || {}
   end
@@ -243,7 +247,7 @@ helpers do
   def load_twitter_user_and_set_bridge_id
     user = load_twitter_user
     if user['jschat_id'] and user['jschat_id'].size > 0
-      response.set_cookie 'jschat_id', user['jschat_id']
+      session[:jschat_id] = user['jschat_id']
     end
   end
 
@@ -363,7 +367,7 @@ end
 get '/quit' do
   load_bridge
   @bridge.send_quit nickname
-  load_bridge
+  delete_twitter_user if twitter_user?
   clear_cookies
   redirect '/'
 end
@@ -403,8 +407,8 @@ get '/twitter_auth' do
 
     # TODO: Make this cope if someone has the same name
     room = '#jschat'
-    save_nickname @twitter.info['screen_name']
     user = load_twitter_user
+    save_nickname user['name']
     session[:jschat_id] = user['jschat_id'] if user['jschat_id'] and !user['jschat_id'].empty?
     save_twitter_user('twitter_name' => @twitter.info['screen_name'], 'jschat_id' => session[:jschat_id])
     user = load_twitter_user
@@ -415,6 +419,7 @@ get '/twitter_auth' do
         room = user['rooms'].first
       end
     else
+      # Reconnect
       session[:jschat_id] = nil
       load_and_connect
       save_twitter_user('jschat_id' => session[:jschat_id])

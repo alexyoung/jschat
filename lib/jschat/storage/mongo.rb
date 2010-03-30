@@ -36,11 +36,8 @@ module JsChat::Storage
       @db['users'].save user
     end
 
-    def self.set_rooms(name, rooms)
-      user = find_user({ 'name' => name })
-      user ||= { 'name' => name }
-      user['rooms'] = rooms
-      save_user user
+    def self.delete_user(user)
+      @db['users'].remove user
     end
 
     def self.available?
