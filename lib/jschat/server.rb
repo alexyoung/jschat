@@ -372,7 +372,7 @@ module JsChat
     Array.new(8, '').collect { chars[rand(chars.size)] }.join
   end
 
-  def register_stateless_cient
+  def register_stateless_client
     @stateless_cookie = new_cookie
     user = User.new(self)
     @@stateless_cookies << { :cookie => @stateless_cookie, :user => user }
@@ -510,7 +510,7 @@ module JsChat
       if input.has_key? 'protocol'
         if input['protocol'] == 'stateless'
           @stateless = true
-          response << send_response(register_stateless_cient)
+          response << send_response(register_stateless_client)
         end
       elsif input.has_key? 'identify'
         input['ip'] ||= get_remote_ip
