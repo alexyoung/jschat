@@ -24,7 +24,7 @@ module JsChat::Storage
     end
 
     def self.lastlog(number, room)
-      @db['events'].find({ :room => room }, { :limit => number, :sort => ['time', Mongo::DESCENDING] }).to_a
+      @db['events'].find({ :room => room }, { :limit => number, :sort => ['time', Mongo::DESCENDING] }).to_a.reverse
     end
 
     # TODO: use twitter oauth for the key
