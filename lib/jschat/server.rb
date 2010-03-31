@@ -143,6 +143,10 @@ module JsChat
       room
     end
 
+    def self.rooms
+      @@rooms
+    end
+
     def lastlog(since = nil)
       { 'display' => 'messages', 'messages' => messages_since(since) }
     end
@@ -432,7 +436,6 @@ module JsChat
     @@users ||= []
     @@stateless_cookies ||= []
     @user = User.new(self)
-    @@users << @user
   end
 
   def log(level, message)
