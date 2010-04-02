@@ -165,6 +165,12 @@ helpers do
   include Rack::Utils
   alias_method :h, :escape_html
 
+  def escape_json(string)
+    string.to_s.gsub("&", "&amp;").
+      gsub("<", "&lt;").
+      gsub(">", "&gt;")
+  end
+
   def detected_layout
     iphone_user_agent? ? :iphone : :layout
   end
@@ -197,7 +203,7 @@ helpers do
 
   def messages_js(messages)
     messages ||= []
-    messages.to_json
+    escape_json messages.to_json
   end
 
   def remove_my_messages(messages)
