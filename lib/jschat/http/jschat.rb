@@ -281,7 +281,12 @@ end
 
 post '/change-name' do
   load_bridge
-  [@bridge.change('user', { 'name' => params['name'] })].to_json
+  result = @bridge.change('user', { 'name' => params['name'] })
+  if result['notice']
+    save_twitter_user({ 'name' => params['name'] }) if twitter_user?
+    save_nickname params['name']
+  end
+  [result].to_json
 end
 
 get '/messages' do
@@ -408,6 +413,11 @@ get '/twitter_auth' do
     # TODO: Make this cope if someone has the same name
     room = '#jschat'
     user = load_twitter_user
+
+    if user['name'] and nickname != user['name']
+      @bridge.change('user', { 'name' => user['name'] })
+    end
+
     save_nickname user['name']
     session[:jschat_id] = user['jschat_id'] if user['jschat_id'] and !user['jschat_id'].empty?
     save_twitter_user('twitter_name' => @twitter.info['screen_name'], 'jschat_id' => session[:jschat_id])
