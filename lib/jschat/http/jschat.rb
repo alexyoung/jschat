@@ -189,8 +189,12 @@ helpers do
     session[:jschat_id] = @bridge.cookie
   end
 
+  def cookie_expiration
+    Time.now.utc + 94608000
+  end
+
   def save_last_room(room)
-    response.set_cookie 'last-room', room
+    response.set_cookie 'last-room', { :value => room, :path => '/', :expires => cookie_expiration }
   end
 
   def last_room
@@ -198,7 +202,7 @@ helpers do
   end
 
   def save_nickname(name)
-    response.set_cookie 'jschat-name', name
+    response.set_cookie 'jschat-name', { :value => name, :path => '/', :expires => cookie_expiration }
   end
 
   def messages_js(messages)
@@ -212,7 +216,7 @@ helpers do
   end
 
   def clear_cookies
-    response.set_cookie 'last-room', nil
+    response.set_cookie 'last-room', { :value => nil, :path => '/' }
     session[:jschat_id] = nil
     session[:request_token] = nil
     session[:request_token_secret] = nil
