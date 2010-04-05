@@ -231,7 +231,6 @@ helpers do
 
   def save_twitter_user(options = {})
     options = load_twitter_user.merge(options).merge({
-      'name'         => nickname,
       'twitter_name' => session[:twitter_name],
       'access_token' => session[:access_token],
       'secret_token' => session[:secret_token]
@@ -293,8 +292,8 @@ post '/change-name' do
   load_bridge
   result = @bridge.change('user', { 'name' => params['name'] })
   if result['notice']
-    save_twitter_user({ 'name' => params['name'] }) if twitter_user?
     save_nickname params['name']
+    save_twitter_user({ :name => params['name'] }) if twitter_user?
   end
   [result].to_json
 end
@@ -423,17 +422,20 @@ get '/twitter_auth' do
     # TODO: Make this cope if someone has the same name
     room = '#jschat'
     user = load_twitter_user
+    name = @twitter.info['screen_name']
 
-    if user['name'] and nickname != user['name']
-      @bridge.change('user', { 'name' => user['name'] })
+    if user['name'] and user['name'].length > 0
+      name = user['name'] 
     end
 
-    save_nickname user['name']
     session[:jschat_id] = user['jschat_id'] if user['jschat_id'] and !user['jschat_id'].empty?
-    save_twitter_user('twitter_name' => @twitter.info['screen_name'], 'jschat_id' => session[:jschat_id])
+    save_nickname name
+    save_twitter_user('twitter_name' => @twitter.info['screen_name'],
+                      'jschat_id' => session[:jschat_id],
+                      'name' => name)
     user = load_twitter_user
-
     load_bridge
+
     if @bridge.active?
       if user['rooms'] and user['rooms'].any?
         room = user['rooms'].first
