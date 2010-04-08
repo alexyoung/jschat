@@ -4,4 +4,14 @@ require 'logger'
 require 'jschat/server'
 require 'jschat/server_options'
 
+def reload!
+  puts 'Reloading Files'
+  Gem.clear_paths
+  spec = Gem.searcher.find('jschat/server')
+  load File.join(spec.full_gem_path, 'lib', 'jschat', 'server.rb')
+  load File.join(spec.full_gem_path, 'lib', 'jschat', 'server_options.rb')
+end
+
+trap 'SIGHUP', lambda { reload! }
+
 JsChat::Server.run!
