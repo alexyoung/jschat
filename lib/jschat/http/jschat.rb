@@ -99,6 +99,11 @@ class JsChat::Bridge
     response['messages']
   end
 
+  def search(phrase, room)
+    response = send_json({ :search => phrase, :room => room })
+    response['messages']
+  end
+
   def recent_messages(room)
     send_json({ 'since' => room })['messages']
   end
@@ -330,6 +335,13 @@ get '/lastlog' do
   if @bridge.active?
     save_last_room params['room']
     messages_js @bridge.lastlog(params['room'])
+  end
+end
+
+get '/search' do
+  load_bridge
+  if @bridge.active?
+    messages_js @bridge.search(params['q'], params['room'])
   end
 end
 

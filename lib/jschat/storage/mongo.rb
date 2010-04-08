@@ -27,6 +27,13 @@ module JsChat::Storage
       @db['events'].find({ :room => room }, { :limit => number, :sort => ['time', Mongo::DESCENDING] }).to_a.reverse
     end
 
+    def self.search(query, room, limit)
+      query = /\b#{query}\b/i
+      @db['events'].find({ 'message.message' => query },
+        { :limit => limit, :sort => ['time', Mongo::DESCENDING] }
+      ).to_a.reverse
+    end
+
     # TODO: use twitter oauth for the key
     def self.find_user(options)
       @db['users'].find_one(options)

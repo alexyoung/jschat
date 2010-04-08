@@ -151,6 +151,10 @@ module JsChat
       { 'display' => 'messages', 'messages' => messages_since(since) }
     end
 
+    def search(query, limit = 100)
+      { 'display' => 'messages', 'messages' => message_search(query, limit) }
+    end
+
     def last_update_time
       message = JsChat::Storage.driver.lastlog(LASTLOG_DEFAULT, name).last
       message['time'] if message
@@ -163,6 +167,10 @@ module JsChat
       else
         messages.select { |m| m['time'] && m['time'] > since }
       end
+    end
+
+    def message_search(query, limit)
+      JsChat::Storage.driver.search(query, name, limit)
     end
 
     def add_to_lastlog(message)
@@ -272,6 +280,15 @@ module JsChat
     room = Room.find room
     if room and room.users.include? @user
       room.lastlog
+    else
+      Error.new(:not_in_room, "Please join this room first")
+    end
+  end
+
+  def search(query, options = {})
+    room = Room.find options['room']
+    if room and room.users.include? @user
+      room.search query
     else
       Error.new(:not_in_room, "Please join this room first")
     end
@@ -519,7 +536,7 @@ module JsChat
         input['ip'] ||= get_remote_ip
         response << send_response(identify(input['identify'], input['ip'], input['session_length']))
       else
-        %w{lastlog change send join names part since ping list quit times}.each do |command|
+        %w{search lastlog change send join names part since ping list quit times}.each do |command|
           if @user.name.nil?
             response << send_response(Error.new(:identity_required, 'Identify first'))
             return response

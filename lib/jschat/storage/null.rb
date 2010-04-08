@@ -14,6 +14,13 @@ module JsChat::Storage
       @messages.select { |m| m['room'] == room }.reverse[0..number].reverse
     end
 
+    def self.search(query, room, limit)
+      @messages ||= []
+      @messages.select do |m|
+        m['message'] and m['message']['message'].match(query)
+      end.reverse[0..limit].reverse
+    end
+
     def self.find_user(options)
     end
 
