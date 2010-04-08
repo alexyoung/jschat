@@ -29,7 +29,7 @@ module JsChat::Storage
 
     def self.search(query, room, limit)
       query = /\b#{query}\b/i
-      @db['events'].find({ 'message.message' => query },
+      @db['events'].find({ 'message.message' => query, 'room' => room },
         { :limit => limit, :sort => ['time', Mongo::DESCENDING] }
       ).to_a.reverse
     end

@@ -17,7 +17,7 @@ module JsChat::Storage
     def self.search(query, room, limit)
       @messages ||= []
       @messages.select do |m|
-        m['message'] and m['message']['message'].match(query)
+        m['message'] and m['message']['message'].match(query) and m['room'] == room
       end.reverse[0..limit].reverse
     end
 
