@@ -428,6 +428,7 @@ get '/twitter_auth' do
     )
   rescue OAuth::Unauthorized => exception
     puts exception
+    halt "Unable to login with Twitter: #{exception.class}"
   end
   
   if @twitter.authorized?
