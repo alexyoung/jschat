@@ -1,0 +1,15 @@
+<ul id="messages">
+</ul>
+<div id="info">
+  <h2 id="room-name">Loading...</h2>
+  <div id="name" style="display: none"><%= nickname %></div>
+  <ul id="names"> 
+  </ul>
+</div>
+<div id="input">
+  <form method="post" action="/message" id="post_message">
+    <input name="message" id="message" value="" type="text" autocomplete="off" autocapitalize="off" />
+    <input name="submit" type="submit" id="send_button" value="Send" />
+  </form>
+</div>
+

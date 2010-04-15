@@ -180,6 +180,10 @@ helpers do
     iphone_user_agent? ? :iphone : :layout
   end
 
+  def detected_message_form
+    iphone_user_agent? ? :iphone_message_form : :message_form
+  end
+
   def iphone_user_agent?
     request.env["HTTP_USER_AGENT"] && request.env["HTTP_USER_AGENT"][/(Mobile\/.+Safari)/]
   end
@@ -367,7 +371,7 @@ end
 get '/chat/' do
   load_bridge
   if @bridge and @bridge.active?
-    erb :message_form, :layout => detected_layout
+    erb detected_message_form, :layout => detected_layout
   else
     erb :index, :layout => detected_layout
   end
@@ -375,7 +379,7 @@ end
 
 post '/message' do
   load_bridge
-  save_last_room params['room']
+  save_last_room params['to']
   @bridge.send_message params['message'], params['to']
   'OK'
 end
