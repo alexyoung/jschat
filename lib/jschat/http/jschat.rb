@@ -59,6 +59,10 @@ before do
 
     if twitter_user?
       load_twitter_user_and_set_bridge_id
+
+      unless valid_twitter_client_id?
+        raise "Server error.  Please reconnect"
+      end
     end
   end
 end
@@ -242,7 +246,8 @@ helpers do
     options = load_twitter_user.merge(options).merge({
       'twitter_name' => session[:twitter_name],
       'access_token' => session[:access_token],
-      'secret_token' => session[:secret_token]
+      'secret_token' => session[:secret_token],
+      'client_id'    => session[:client_id]
     })
     JsChat::Storage.driver.save_user(options)
   end
@@ -262,6 +267,10 @@ helpers do
     JsChat::Storage.driver.find_user({ 'twitter_name' => session[:twitter_name] }) || {}
   end
 
+  def valid_twitter_client_id?
+    session[:client_id] == load_twitter_user['client_id']
+  end
+
   def load_twitter_user_and_set_bridge_id
     user = load_twitter_user
     if user['jschat_id'] and user['jschat_id'].size > 0
@@ -271,6 +280,11 @@ helpers do
 
   def nickname
     request.cookies['jschat-name']
+  end
+
+  def unique_token
+    chars = ("a".."z").to_a + ("1".."9").to_a 
+    Array.new(8, '').collect { chars[rand(chars.size)] }.join
   end
 end
 
@@ -446,6 +460,7 @@ get '/twitter_auth' do
     end
 
     session[:jschat_id] = user['jschat_id'] if user['jschat_id'] and !user['jschat_id'].empty?
+    session[:client_id] = unique_token
     save_nickname name
     save_twitter_user('twitter_name' => @twitter.info['screen_name'],
                       'jschat_id' => session[:jschat_id],
