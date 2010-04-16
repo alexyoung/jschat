@@ -61,7 +61,7 @@ before do
       load_twitter_user_and_set_bridge_id
 
       unless valid_twitter_client_id?
-        raise "Server error.  Please reconnect"
+        clear_cookies
       end
     end
   end
@@ -329,8 +329,10 @@ get '/messages' do
   else
     if @bridge.last_error and @bridge.last_error['error']['code'] == 107
       error 500, [@bridge.last_error].to_json 
-    else
+    elsif @bridge.last_error
       [@bridge.last_error].to_json
+    else
+      error 500, 'Unknown error'
     end
   end
 end
