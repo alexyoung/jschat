@@ -497,6 +497,15 @@ get '/twitter_auth' do
   end
 end
 
+# TODO: This doesn't seem to work with twitter oauth right now
+post '/tweet' do
+  if twitter_user? and @twitter.authorized?
+    @twitter.update(params['tweet'])
+  else
+    error 500, 'You are not signed in with Twitter'
+  end
+end
+
 # This serves the JavaScript concat'd by Sprockets
 # run script/sprocket.rb to cache this
 get '/javascripts/all.js' do
