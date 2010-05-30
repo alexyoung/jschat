@@ -181,7 +181,13 @@ helpers do
   end
 
   def detected_layout
-    iphone_user_agent? ? :iphone : :layout
+    if iphone_user_agent?
+      :iphone
+    elsif ipad_user_agent?
+      :ipad
+    else
+      :layout
+    end
   end
 
   def detected_message_form
@@ -189,7 +195,11 @@ helpers do
   end
 
   def iphone_user_agent?
-    request.env["HTTP_USER_AGENT"] && request.env["HTTP_USER_AGENT"][/(Mobile\/.+Safari)/]
+    request.env["HTTP_USER_AGENT"] && request.env["HTTP_USER_AGENT"][/(\(iPhone)/]
+  end
+  
+  def ipad_user_agent?
+    request.env["HTTP_USER_AGENT"] && request.env["HTTP_USER_AGENT"][/(\(iPad)/]
   end
 
   def load_bridge
