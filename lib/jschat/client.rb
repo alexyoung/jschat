@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'eventmachine'
+gem 'json', '>= 1.1.9'
 require 'json'
 require 'ncurses'
 require 'optparse'

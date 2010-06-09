@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'rubygems'
 require 'eventmachine'
+gem 'json', '>= 1.1.9'
 require 'json'
 $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 require File.join(File.dirname(__FILE__), '..', 'lib', 'jschat', 'server.rb')

@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'sinatra'
 require 'sha1'
+gem 'json', '>= 1.1.9'
 require 'json'
 require 'sprockets'
 require 'jschat/init'
