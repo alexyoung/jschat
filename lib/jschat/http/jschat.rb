@@ -192,7 +192,13 @@ helpers do
   end
 
   def detected_message_form
-    iphone_user_agent? ? :iphone_message_form : :message_form
+    if iphone_user_agent?
+      :iphone_message_form
+    elsif ipad_user_agent?
+      :iphone_message_form
+    else
+      :message_form
+    end
   end
 
   def iphone_user_agent?
