@@ -6,7 +6,7 @@ end
 module JsChat::Storage
   module MongoDriver
     def self.connect!
-      @db = Mongo::Connection.new(ServerConfig['db_host'], ServerConfig['db_port']).db(ServerConfig['db_name'])
+      @db = Mongo::Connection.new(ServerConfig['db_host'], ServerConfig['db_port'], :slave_ok => true).db(ServerConfig['db_name'])
       if ServerConfig['db_username'] and ServerConfig['db_password']
         if @db.authenticate(ServerConfig['db_username'], ServerConfig['db_password'])
           true
