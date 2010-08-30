@@ -71,8 +71,8 @@ module JsChat
       @expires = Time.now.utc + @session_length
     end
 
-    def to_json
-      { 'name' => @name, 'last_activity' => @last_activity }.to_json
+    def to_json(*a)
+      { 'name' => @name, 'last_activity' => @last_activity }.to_json(*a)
     end
 
     def name=(name)
@@ -218,8 +218,8 @@ module JsChat
       @users.collect { |user| user.name }
     end
 
-    def to_json
-      { 'name' => @name, 'members' => member_names }.to_json
+    def to_json(*a)
+      { 'name' => @name, 'members' => member_names }.to_json(*a)
     end
 
     def notice(user, message, all = false)

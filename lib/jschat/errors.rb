@@ -6,8 +6,8 @@ module JsChat
     end
 
     # Note: This shouldn't really include 'display' directives
-    def to_json
-      { 'display' => 'error', 'error' => { 'message' => @message, 'code' => @code } }.to_json
+    def to_json(*a)
+      { 'display' => 'error', 'error' => { 'message' => @message, 'code' => @code } }.to_json(*a)
     end
   end
 
