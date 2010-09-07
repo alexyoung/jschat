@@ -524,7 +524,7 @@ post '/tweet' do
 end
 
 # This serves the JavaScript concat'd by Sprockets
-# run script/sprocket.rb to cache this
+# run script/sprockets.rb to cache this
 get '/javascripts/all.js' do
   root = File.join(File.dirname(File.expand_path(__FILE__)))
   sprockets_config = YAML.load(IO.read(File.join(root, 'config', 'sprockets.yml')))
