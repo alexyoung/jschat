@@ -1,7 +1,38 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'sinatra'
+require 'getoptlong'
 
 set :environment, :production
+
+def printusage(error_code)
+  print "Usage: jschat-web [options]\n\n"
+  print "    -b, --bind=ADDRESS               IP address\n"
+  print "    -p, --port=PORT                  Port number\n"
+  print "    -H, --help                       This text\n"
+
+  exit(error_code)
+end
+
+opts = GetoptLong.new(
+  [ "--bind", "-b", GetoptLong::REQUIRED_ARGUMENT ],
+  [ "--port", "-p", GetoptLong::REQUIRED_ARGUMENT ],
+  [ "--help", "-H", GetoptLong::NO_ARGUMENT ]
+)
+
+begin
+  opts.each do |opt, arg|
+    case opt
+      when "--bind"
+        set :bind, arg
+      when "--port"
+        set :port, arg
+      when "--help"
+        printusage(0)
+    end
+  end
+end
+                                                                                 
 require 'jschat/http/jschat'
 Sinatra::Application.run!
+
