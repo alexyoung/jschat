@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new('>= 0') if s.respond_to? :required_rubygems_version=
   s.authors = ['Alex R. Young']
-  s.date = %q{2010-03-21}
+  s.date = %q{2012-04-13}
   s.description = %q{JsChat is a JSON-based web and console chat app.}
   s.email = %q{alex@alexyoung.org}
   s.files = FileList['{bin,http,lib,test}/**/*', 'README.textile', 'MIT-LICENSE'].to_a
