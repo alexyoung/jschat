@@ -6,9 +6,7 @@ require 'json'
 $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 require File.join(File.dirname(__FILE__), '..', 'lib', 'jschat', 'server.rb')
 
-ServerConfig = {
-  'max_message_length' => 500
-}
+ServerConfig['max_message_length'] = 500
 
 class JsChat::Room
   def self.reset

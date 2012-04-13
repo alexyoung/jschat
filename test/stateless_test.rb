@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class TestJsChat < Test::Unit::TestCase
+class StatelessTest < Test::Unit::TestCase
   include JsChatHelpers
 
   def setup

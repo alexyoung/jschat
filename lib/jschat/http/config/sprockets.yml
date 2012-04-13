@@ -1,7 +1,0 @@
-:load_path:
-  - public/javascripts
-  - public/javascripts/all
-:source_files:
-  - public/javascripts/init.js
-  - public/javascripts/app/**/*.js
-:output_file: public/javascripts/all.js

@@ -2,7 +2,7 @@ require 'rake'
 
 Gem::Specification.new do |s|
   s.name = %q{jschat}
-  s.version = '0.3.6'
+  s.version = '0.3.7'
 
   s.required_rubygems_version = Gem::Requirement.new('>= 0') if s.respond_to? :required_rubygems_version=
   s.authors = ['Alex R. Young']
@@ -19,7 +19,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency('sinatra', '>= 0.9.4')
   s.add_dependency('json', '>= 1.1.9')
-  s.add_dependency('sprockets', '>= 1.0.2')
   s.add_dependency('eventmachine', '>= 0.12.8')
   s.add_dependency('ncurses', '>= 0.9.1')
 end

@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+$:.unshift(File.expand_path(File.dirname(__FILE__) + '/../lib'))
+
 require 'logger'
 require 'jschat/server'
 require 'jschat/server_options'

@@ -3,7 +3,6 @@ require 'sinatra'
 require 'sha1'
 gem 'json', '>= 1.1.9'
 require 'json'
-require 'sprockets'
 require 'jschat/init'
 require 'jschat/http/helpers/url_for'
 
@@ -521,14 +520,4 @@ post '/tweet' do
   else
     error 500, 'You are not signed in with Twitter'
   end
-end
-
-# This serves the JavaScript concat'd by Sprockets
-# run script/sprockets.rb to cache this
-get '/javascripts/all.js' do
-  root = File.join(File.dirname(File.expand_path(__FILE__)))
-  sprockets_config = YAML.load(IO.read(File.join(root, 'config', 'sprockets.yml')))
-  secretary = Sprockets::Secretary.new(sprockets_config.merge(:root => root))
-  content_type 'text/javascript'
-  secretary.concatenation.to_s
 end
